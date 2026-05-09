@@ -36,6 +36,12 @@
 	--spacing-20: 80px;
 	--spacing-24: 96px;
 	--spacing-30: 120px;
+
+	--font-poppins: Poppins-Regular;
+	--font-poppins-medium: Poppins-Medium;
+	--font-poppins-bold: Poppins-Bold;
+	--font-poppins-thin: Poppins-Thin;
+	--font-poppins-light: Poppins-Light;
 }
 
 @layer components {
