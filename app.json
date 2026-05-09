@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "base",
-    "slug": "base",
+    "name": "recur",
+    "slug": "recur",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "base",
+    "scheme": "recur",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
