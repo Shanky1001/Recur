@@ -1,5 +1,6 @@
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import type { Notification } from "@/src/data/dummy";
+import type { NotificationJob } from "@/src/repository/models";
 
 export type HydratedData = {
 	subscriptions: Subscription[];
@@ -24,6 +25,16 @@ export interface AppRepository {
 	deleteNotification: (id: string) => Promise<void>;
 	clearNotifications: () => Promise<void>;
 	markAllNotificationsRead: () => Promise<void>;
+
+	// Scheduled notification job mapping (Notification Engine uses this)
+	loadNotificationJobs: () => Promise<NotificationJob[]>;
+	getNotificationJob: (id: string) => Promise<NotificationJob | null>;
+	upsertNotificationJob: (job: NotificationJob) => Promise<void>;
+	deleteNotificationJob: (id: string) => Promise<void>;
+	deleteNotificationJobsBySubscriptionId: (
+		subscriptionId: string,
+	) => Promise<void>;
+	clearNotificationJobs: () => Promise<void>;
 
 	resetLocalData: (
 		seedSubscriptions: Subscription[],

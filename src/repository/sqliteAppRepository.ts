@@ -1,13 +1,19 @@
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import type { Notification } from "@/src/data/dummy";
 import type { AppRepository } from "@/src/repository/appRepository";
+import type { NotificationJob } from "@/src/repository/models";
 
 import {
 	cancelSubscription,
+	clearNotificationJobs,
 	clearNotifications,
 	deleteNotification,
+	deleteNotificationJob,
+	deleteNotificationJobsBySubscriptionId,
 	deleteSubscription,
+	getNotificationJob,
 	initSqlite,
+	loadNotificationJobs,
 	loadNotifications,
 	loadSubscriptions,
 	markAllNotificationsRead,
@@ -15,6 +21,7 @@ import {
 	resetLocalData,
 	seedIfEmpty,
 	upsertNotification,
+	upsertNotificationJob,
 	upsertSubscription,
 } from "@/src/db/sqlite";
 
@@ -57,6 +64,24 @@ export const sqliteAppRepository: AppRepository = {
 	},
 	markAllNotificationsRead: async () => {
 		await markAllNotificationsRead();
+	},
+	loadNotificationJobs: async () => {
+		return await loadNotificationJobs();
+	},
+	getNotificationJob: async (id: string) => {
+		return await getNotificationJob(id);
+	},
+	upsertNotificationJob: async (job: NotificationJob) => {
+		await upsertNotificationJob(job);
+	},
+	deleteNotificationJob: async (id: string) => {
+		await deleteNotificationJob(id);
+	},
+	deleteNotificationJobsBySubscriptionId: async (subscriptionId: string) => {
+		await deleteNotificationJobsBySubscriptionId(subscriptionId);
+	},
+	clearNotificationJobs: async () => {
+		await clearNotificationJobs();
 	},
 	resetLocalData: async (
 		seedSubscriptions: Subscription[],

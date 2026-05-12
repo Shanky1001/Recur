@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import type { Notification } from "@/src/data/dummy";
+import type { NotificationJob } from "@/src/repository/models";
 
 // We keep timestamps as UTC ISO strings only.
 export function nowIsoUtc(): string {
@@ -77,6 +78,15 @@ export async function initSqlite(): Promise<void> {
 				subscriptionId TEXT,
 				createdAt TEXT NOT NULL,
 				read INTEGER NOT NULL
+			);
+
+			CREATE TABLE IF NOT EXISTS notification_jobs (
+				id TEXT PRIMARY KEY NOT NULL,
+				subscriptionId TEXT NOT NULL,
+				type TEXT NOT NULL,
+				triggerAt TEXT NOT NULL,
+				expoNotificationId TEXT NOT NULL,
+				createdAt TEXT NOT NULL
 			);
 		`);
 	})();
@@ -299,6 +309,7 @@ export async function resetLocalData(
 
 	await d.runAsync("DELETE FROM subscriptions");
 	await d.runAsync("DELETE FROM notifications");
+	await d.runAsync("DELETE FROM notification_jobs");
 
 	for (const s of seedSubscriptions) {
 		await upsertSubscription(s);
@@ -306,4 +317,95 @@ export async function resetLocalData(
 	for (const n of seedNotifications) {
 		await upsertNotification(n);
 	}
+}
+
+export async function loadNotificationJobs(): Promise<NotificationJob[]> {
+	await initSqlite();
+	const d = db;
+	if (!d) return [];
+	const rows = await d.getAllAsync<any>(
+		"SELECT * FROM notification_jobs ORDER BY createdAt DESC",
+	);
+	return rows.map((r) => ({
+		id: String(r.id),
+		subscriptionId: String(r.subscriptionId),
+		type: String(r.type) as any,
+		triggerAt: String(r.triggerAt),
+		expoNotificationId: String(r.expoNotificationId),
+		createdAt: String(r.createdAt),
+	}));
+}
+
+export async function getNotificationJob(
+	id: string,
+): Promise<NotificationJob | null> {
+	await initSqlite();
+	const d = db;
+	if (!d) return null;
+	const rows = await d.getAllAsync<any>(
+		"SELECT * FROM notification_jobs WHERE id=? LIMIT 1",
+		[id],
+	);
+	const r = rows[0];
+	if (!r) return null;
+	return {
+		id: String(r.id),
+		subscriptionId: String(r.subscriptionId),
+		type: String(r.type) as any,
+		triggerAt: String(r.triggerAt),
+		expoNotificationId: String(r.expoNotificationId),
+		createdAt: String(r.createdAt),
+	};
+}
+
+export async function upsertNotificationJob(
+	job: NotificationJob,
+): Promise<void> {
+	await initSqlite();
+	const d = db;
+	if (!d) return;
+	await d.runAsync(
+		`INSERT INTO notification_jobs (id, subscriptionId, type, triggerAt, expoNotificationId, createdAt)
+		VALUES (?,?,?,?,?,?)
+		ON CONFLICT(id) DO UPDATE SET
+			subscriptionId=excluded.subscriptionId,
+			type=excluded.type,
+			triggerAt=excluded.triggerAt,
+			expoNotificationId=excluded.expoNotificationId,
+			createdAt=excluded.createdAt
+		`,
+		[
+			job.id,
+			job.subscriptionId,
+			job.type,
+			job.triggerAt,
+			job.expoNotificationId,
+			job.createdAt,
+		],
+	);
+}
+
+export async function deleteNotificationJob(id: string): Promise<void> {
+	await initSqlite();
+	const d = db;
+	if (!d) return;
+	await d.runAsync("DELETE FROM notification_jobs WHERE id=?", [id]);
+}
+
+export async function deleteNotificationJobsBySubscriptionId(
+	subscriptionId: string,
+): Promise<void> {
+	await initSqlite();
+	const d = db;
+	if (!d) return;
+	await d.runAsync("DELETE FROM notification_jobs WHERE subscriptionId=?", [
+		subscriptionId,
+	]);
+}
+
+export async function clearNotificationJobs(): Promise<void> {
+	await initSqlite();
+	const d = db;
+	if (!d) return;
+	await d.runAsync("DELETE FROM notification_jobs");
 }
