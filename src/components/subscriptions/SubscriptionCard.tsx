@@ -1,6 +1,7 @@
 import type React from "react";
-import { Image, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
+import SubscriptionStatusPill from "@/src/components/subscriptions/SubscriptionStatusPill";
 import Card from "@/src/components/ui/Card";
 import { formatDateLong } from "@/src/utils/helper";
 
@@ -21,53 +22,19 @@ export type Subscription = {
 	reminderDaysBefore?: number;
 	nextPaymentDate: string;
 	logoUri?: string;
+	createdAt?: string;
 };
-
-function StatusPill({ status }: { status: SubscriptionStatus }) {
-	const label =
-		status === "trial"
-			? "Free Trial"
-			: status === "cancelled"
-				? "Cancelled"
-				: status === "paused"
-					? "Paused"
-					: "Active";
-	const pillClassName =
-		status === "trial"
-			? "bg-blue-50"
-			: status === "cancelled"
-				? "bg-slate-100"
-				: status === "paused"
-					? "bg-orange-50"
-					: "bg-green-50";
-	const textClassName =
-		status === "trial"
-			? "text-subscription"
-			: status === "cancelled"
-				? "text-slate-600"
-				: status === "paused"
-					? "text-orange-600"
-					: "text-success";
-
-	return (
-		<View className={`rounded-lg px-3 py-2 ${pillClassName}`}>
-			<Text className={`text-sm font-poppins-bold ${textClassName}`}>
-				{label}
-			</Text>
-		</View>
-	);
-}
 
 export default function SubscriptionCard({
 	subscription,
+	onPress,
 }: {
 	subscription: Subscription;
+	onPress?: () => void;
 }) {
-	return (
-		<Card
-			elevated={false}
-			className="mx-4 rounded-3xl border border-border px-4 py-4"
-		>
+	const dividerStyle = styles.divider;
+	const content = (
+		<View>
 			<View className="flex-row items-center justify-between">
 				<View className="flex-row items-center">
 					<View className="size-12 overflow-hidden rounded-xl bg-white">
@@ -91,10 +58,10 @@ export default function SubscriptionCard({
 						{subscription.name}
 					</Text>
 				</View>
-				<StatusPill status={subscription.status} />
+				<SubscriptionStatusPill status={subscription.status} />
 			</View>
 
-			<View className="mt-4 h-px bg-border/60" />
+			<View className="mt-4" style={dividerStyle} />
 
 			<View className="mt-4 flex-row justify-between">
 				<View className="flex-1 pr-4">
@@ -122,6 +89,39 @@ export default function SubscriptionCard({
 					</Text>
 				</View>
 			</View>
-		</Card>
+		</View>
+	);
+
+	if (!onPress) {
+		return (
+			<Card
+				elevated={false}
+				className="mx-4 rounded-3xl border border-border px-4 py-4"
+			>
+				{content}
+			</Card>
+		);
+	}
+
+	return (
+		<Pressable
+			onPress={onPress}
+			hitSlop={6}
+			style={({ pressed }) => ({ opacity: pressed ? 0.92 : 1 })}
+		>
+			<Card
+				elevated={false}
+				className="mx-4 rounded-3xl border border-border px-4 py-4"
+			>
+				{content}
+			</Card>
+		</Pressable>
 	);
 }
+
+const styles = StyleSheet.create({
+	divider: {
+		height: StyleSheet.hairlineWidth,
+		backgroundColor: "rgba(8, 17, 38, 0.12)",
+	},
+});

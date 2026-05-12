@@ -50,6 +50,7 @@ type Action =
 	| { type: "notifications/markRead"; id: string }
 	| { type: "notifications/snooze"; id: string; snoozed: Notification }
 	| { type: "subscriptions/cancel"; id: string }
+	| { type: "subscriptions/upsert"; subscription: Subscription }
 	| { type: "subscriptions/add"; subscription: Subscription };
 
 function addHours(iso: string, hours: number): string {
@@ -147,6 +148,22 @@ function reducer(state: AppState, action: Action): AppState {
 				action.subscription,
 				...state.subscriptions,
 			];
+			return {
+				...state,
+				subscriptions: nextSubscriptions,
+				dashboard: deriveDashboard(state.dashboard, nextSubscriptions),
+			};
+		}
+		case "subscriptions/upsert": {
+			const existingIndex = state.subscriptions.findIndex(
+				(s) => s.id === action.subscription.id,
+			);
+			const nextSubscriptions = [...state.subscriptions];
+			if (existingIndex >= 0) {
+				nextSubscriptions[existingIndex] = action.subscription;
+			} else {
+				nextSubscriptions.unshift(action.subscription);
+			}
 			return {
 				...state,
 				subscriptions: nextSubscriptions,
@@ -307,6 +324,10 @@ export function useAppActions() {
 			cancelSubscription: async (id: string) => {
 				await dbCancelSubscription(id);
 				dispatch({ type: "subscriptions/cancel", id });
+			},
+			upsertSubscription: async (subscription: Subscription) => {
+				await upsertSubscription(subscription);
+				dispatch({ type: "subscriptions/upsert", subscription });
 			},
 			addSubscription: async (subscription: Subscription) => {
 				await upsertSubscription(subscription);

@@ -114,6 +114,7 @@ export async function loadSubscriptions(): Promise<Subscription[]> {
 				: Number(r.reminderDaysBefore),
 		nextPaymentDate: String(r.nextPaymentDate),
 		logoUri: r.logoUri ?? undefined,
+		createdAt: r.createdAt == null ? undefined : String(r.createdAt),
 	}));
 }
 
@@ -122,7 +123,7 @@ export async function upsertSubscription(sub: Subscription): Promise<void> {
 	const d = db;
 	if (!d) return;
 
-	const createdAt = nowIsoUtc();
+	const createdAt = sub.createdAt ?? nowIsoUtc();
 	await d.runAsync(
 		`INSERT INTO subscriptions (
 			id, name, category, status, planName, pricePerMonth, currencySymbol,

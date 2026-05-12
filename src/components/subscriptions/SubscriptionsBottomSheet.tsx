@@ -3,6 +3,7 @@ import BottomSheet, {
 	BottomSheetFlatList,
 	type BottomSheetHandleProps,
 } from "@gorhom/bottom-sheet";
+import { router } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,7 +48,15 @@ export default function SubscriptionsBottomSheet({
 
 	const renderItem = useCallback(
 		({ item }: { item: Subscription }) => (
-			<SubscriptionCard subscription={item} />
+			<SubscriptionCard
+				subscription={item}
+				onPress={() =>
+					router.push({
+						pathname: "/(drawer)/(tabs)/subscriptions/[id]",
+						params: { id: item.id, from: "home" },
+					})
+				}
+			/>
 		),
 		[],
 	);
