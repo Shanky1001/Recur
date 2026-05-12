@@ -89,7 +89,7 @@ export default function AddSubscriptionScreen() {
 		setCategory(serviceConfig.defaultCategory ?? "Other");
 	}, [serviceConfig]);
 
-	const saveSubscription = () => {
+	const saveSubscription = async () => {
 		const parsedCost = Number(cost);
 		if (
 			!service ||
@@ -111,7 +111,7 @@ export default function AddSubscriptionScreen() {
 				? Math.round(parsedCost / 12)
 				: pricePerBillingCycle;
 
-		addSubscription({
+		await addSubscription({
 			id,
 			name: service,
 			category,

@@ -1,7 +1,28 @@
-import React, { createContext, useContext, useMemo, useReducer } from "react";
+import React, {
+	createContext,
+	useContext,
+	useEffect,
+	useMemo,
+	useReducer,
+} from "react";
 
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import { seed, type DummyData, type Notification } from "@/src/data/dummy";
+import {
+	cancelSubscription as dbCancelSubscription,
+	clearNotifications as dbClearNotifications,
+	deleteNotification as dbDeleteNotification,
+	markAllNotificationsRead as dbMarkAllNotificationsRead,
+	markNotificationRead as dbMarkNotificationRead,
+	resetLocalData as dbResetLocalData,
+	initSqlite,
+	loadNotifications,
+	loadSubscriptions,
+	nowIsoUtc,
+	seedIfEmpty,
+	upsertNotification,
+	upsertSubscription,
+} from "@/src/db/sqlite";
 
 type User = {
 	name: string;
@@ -18,11 +39,16 @@ export type AppState = {
 };
 
 type Action =
+	| {
+			type: "app/hydrate";
+			subscriptions: Subscription[];
+			notifications: Notification[];
+	  }
 	| { type: "notifications/clearAll" }
 	| { type: "notifications/markAllRead" }
 	| { type: "notifications/deleteById"; id: string }
 	| { type: "notifications/markRead"; id: string }
-	| { type: "notifications/snooze"; id: string; hours: number }
+	| { type: "notifications/snooze"; id: string; snoozed: Notification }
 	| { type: "subscriptions/cancel"; id: string }
 	| { type: "subscriptions/add"; subscription: Subscription };
 
@@ -33,8 +59,42 @@ function addHours(iso: string, hours: number): string {
 	return date.toISOString();
 }
 
+function deriveDashboard(
+	base: Dashboard,
+	subscriptions: Subscription[],
+): Dashboard {
+	const activeCount = subscriptions.filter(
+		(s) => s.status !== "cancelled",
+	).length;
+	const monthlySpend = subscriptions
+		.filter((s) => s.status !== "cancelled")
+		.reduce(
+			(sum, s) =>
+				sum + (Number.isFinite(s.pricePerMonth) ? s.pricePerMonth : 0),
+			0,
+		);
+
+	return {
+		...base,
+		activeSubscriptions: activeCount,
+		totalMonthlySpend: monthlySpend,
+	};
+}
+
 function reducer(state: AppState, action: Action): AppState {
 	switch (action.type) {
+		case "app/hydrate": {
+			const dashboard = deriveDashboard(
+				state.dashboard,
+				action.subscriptions,
+			);
+			return {
+				...state,
+				subscriptions: action.subscriptions,
+				notifications: action.notifications,
+				dashboard,
+			};
+		}
 		case "notifications/clearAll":
 			return { ...state, notifications: [] };
 		case "notifications/markAllRead":
@@ -59,28 +119,13 @@ function reducer(state: AppState, action: Action): AppState {
 					n.id === action.id ? { ...n, read: true } : n,
 				),
 			};
-		case "notifications/snooze": {
-			const existing = state.notifications.find(
-				(n) => n.id === action.id,
-			);
-			if (!existing) return state;
-
-			const nowIso = new Date().toISOString();
-			const snoozed = {
-				...existing,
-				id: `${existing.id}-snooze-${Date.now()}`,
-				read: false,
-				createdAt: addHours(nowIso, action.hours),
-				message: existing.message,
-			};
-
+		case "notifications/snooze":
 			return {
 				...state,
 				notifications: state.notifications
 					.map((n) => (n.id === action.id ? { ...n, read: true } : n))
-					.concat([snoozed]),
+					.concat([action.snoozed]),
 			};
-		}
 		case "subscriptions/cancel": {
 			let didChange = false;
 			const nextSubscriptions = state.subscriptions.map((s) => {
@@ -94,13 +139,7 @@ function reducer(state: AppState, action: Action): AppState {
 			return {
 				...state,
 				subscriptions: nextSubscriptions,
-				dashboard: {
-					...state.dashboard,
-					activeSubscriptions: Math.max(
-						0,
-						state.dashboard.activeSubscriptions - 1,
-					),
-				},
+				dashboard: deriveDashboard(state.dashboard, nextSubscriptions),
 			};
 		}
 		case "subscriptions/add": {
@@ -108,17 +147,10 @@ function reducer(state: AppState, action: Action): AppState {
 				action.subscription,
 				...state.subscriptions,
 			];
-			const shouldCountAsActive =
-				action.subscription.status !== "cancelled";
 			return {
 				...state,
 				subscriptions: nextSubscriptions,
-				dashboard: {
-					...state.dashboard,
-					activeSubscriptions: shouldCountAsActive
-						? state.dashboard.activeSubscriptions + 1
-						: state.dashboard.activeSubscriptions,
-				},
+				dashboard: deriveDashboard(state.dashboard, nextSubscriptions),
 			};
 		}
 		default:
@@ -152,6 +184,31 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 		undefined,
 		createInitialState,
 	);
+
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				await initSqlite();
+				await seedIfEmpty(seed.subscriptions, seed.notifications);
+				const [subs, notifs] = await Promise.all([
+					loadSubscriptions(),
+					loadNotifications(),
+				]);
+				if (cancelled) return;
+				dispatch({
+					type: "app/hydrate",
+					subscriptions: subs,
+					notifications: notifs,
+				});
+			} catch {
+				// If SQLite fails (e.g., web), fall back to in-memory seed.
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 
 	const unreadCount = useMemo(
 		() => state.notifications.filter((n) => !n.read).length,
@@ -202,23 +259,60 @@ export function useUnreadCount() {
 
 export function useAppActions() {
 	const { dispatch } = useAppState();
+	const notifications = useNotificationsList();
 	return useMemo(
 		() => ({
-			clearAllNotifications: () =>
-				dispatch({ type: "notifications/clearAll" }),
-			markAllNotificationsRead: () =>
-				dispatch({ type: "notifications/markAllRead" }),
-			deleteNotification: (id: string) =>
-				dispatch({ type: "notifications/deleteById", id }),
-			markNotificationRead: (id: string) =>
-				dispatch({ type: "notifications/markRead", id }),
-			snoozeNotification: (id: string, hours: number = 24) =>
-				dispatch({ type: "notifications/snooze", id, hours }),
-			cancelSubscription: (id: string) =>
-				dispatch({ type: "subscriptions/cancel", id }),
-			addSubscription: (subscription: Subscription) =>
-				dispatch({ type: "subscriptions/add", subscription }),
+			resetLocalData: async () => {
+				await dbResetLocalData(seed.subscriptions, seed.notifications);
+				const [subs, notifs] = await Promise.all([
+					loadSubscriptions(),
+					loadNotifications(),
+				]);
+				dispatch({
+					type: "app/hydrate",
+					subscriptions: subs,
+					notifications: notifs,
+				});
+			},
+			clearAllNotifications: async () => {
+				await dbClearNotifications();
+				dispatch({ type: "notifications/clearAll" });
+			},
+			markAllNotificationsRead: async () => {
+				await dbMarkAllNotificationsRead();
+				dispatch({ type: "notifications/markAllRead" });
+			},
+			deleteNotification: async (id: string) => {
+				await dbDeleteNotification(id);
+				dispatch({ type: "notifications/deleteById", id });
+			},
+			markNotificationRead: async (id: string) => {
+				await dbMarkNotificationRead(id);
+				dispatch({ type: "notifications/markRead", id });
+			},
+			snoozeNotification: async (id: string, hours: number = 24) => {
+				const existing = notifications.find((n) => n.id === id);
+				if (!existing) return;
+				const snoozed: Notification = {
+					...existing,
+					id: `${existing.id}-snooze-${Date.now()}`,
+					read: false,
+					createdAt: addHours(nowIsoUtc(), hours),
+				};
+				// Persist: mark original read + insert snoozed notification
+				await dbMarkNotificationRead(id);
+				await upsertNotification(snoozed);
+				dispatch({ type: "notifications/snooze", id, snoozed });
+			},
+			cancelSubscription: async (id: string) => {
+				await dbCancelSubscription(id);
+				dispatch({ type: "subscriptions/cancel", id });
+			},
+			addSubscription: async (subscription: Subscription) => {
+				await upsertSubscription(subscription);
+				dispatch({ type: "subscriptions/add", subscription });
+			},
 		}),
-		[dispatch],
+		[dispatch, notifications],
 	);
 }

@@ -49,7 +49,8 @@
             "./assets/fonts/Poppins-Thin.ttf"
           ]
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,
