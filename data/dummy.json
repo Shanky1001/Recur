@@ -1,0 +1,90 @@
+{
+    "user": {
+        "name": "Shashank Rai",
+        "avatarUri": "https://i.pravatar.cc/150?img=12",
+        "notificationCount": 7
+    },
+    "dashboard": {
+        "currencySymbol": "₹",
+        "totalMonthlySpend": 1270,
+        "activeSubscriptions": 12,
+        "pendingThisWeek": 3
+    },
+    "subscriptions": [
+        {
+            "id": "netflix",
+            "name": "Netflix",
+            "category": "Entertainment",
+            "status": "active",
+            "planName": "Premium",
+            "pricePerMonth": 649,
+            "currencySymbol": "₹",
+            "nextPaymentDate": "2025-06-12",
+            "logoUri": "https://cdn.simpleicons.org/netflix/E50914"
+        },
+        {
+            "id": "youtube",
+            "name": "YouTube",
+            "category": "Entertainment",
+            "status": "trial",
+            "planName": "Premium",
+            "pricePerMonth": 149,
+            "currencySymbol": "₹",
+            "nextPaymentDate": "2025-06-18",
+            "logoUri": "https://cdn.simpleicons.org/youtube/FF0000"
+        },
+        {
+            "id": "notion",
+            "name": "Notion",
+            "category": "Productivity",
+            "status": "active",
+            "planName": "Plus",
+            "pricePerMonth": 399,
+            "currencySymbol": "₹",
+            "nextPaymentDate": "2025-06-20",
+            "logoUri": "https://cdn.simpleicons.org/notion/000000"
+        }
+    ],
+    "notifications": [
+        {
+            "id": "n1",
+            "title": "Payment due tomorrow",
+            "message": "Netflix Premium will renew tomorrow.",
+            "type": "billing",
+            "createdAt": "2026-05-11T10:30:00.000Z",
+            "read": false
+        },
+        {
+            "id": "n2",
+            "title": "Free trial ending",
+            "message": "Your YouTube Premium trial ends in 2 days.",
+            "type": "trial",
+            "createdAt": "2026-05-11T08:10:00.000Z",
+            "read": false
+        },
+        {
+            "id": "n3",
+            "title": "New subscription added",
+            "message": "Notion Plus was added to your subscriptions.",
+            "type": "info",
+            "createdAt": "2026-05-10T14:05:00.000Z",
+            "read": true
+        },
+        {
+            "id": "n4",
+            "title": "Spending insight",
+            "message": "Your monthly spend is up 12% vs last month.",
+            "type": "insight",
+            "createdAt": "2026-05-10T09:20:00.000Z",
+            "read": false
+        },
+        {
+            "id": "n5",
+            "title": "Reminder set",
+            "message": "We'll remind you 2 days before each renewal.",
+            "type": "info",
+            "createdAt": "2026-05-09T18:45:00.000Z",
+            "read": true
+        }
+    ]
+}

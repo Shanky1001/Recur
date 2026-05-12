@@ -1,7 +1,13 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
+
+import { AppStateProvider } from "@/src/state/appState";
+
+SplashScreen.preventAutoHideAsync();
+
 export default function RootLayout() {
 	const [fontsLoaded] = useFonts({
 		"Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
@@ -19,5 +25,11 @@ export default function RootLayout() {
 	if (!fontsLoaded) {
 		return null;
 	}
-	return <Stack screenOptions={{ headerShown: false }} />;
+	return (
+		<GestureHandlerRootView style={{ flex: 1 }}>
+			<AppStateProvider>
+				<Stack screenOptions={{ headerShown: false }} />
+			</AppStateProvider>
+		</GestureHandlerRootView>
+	);
 }
