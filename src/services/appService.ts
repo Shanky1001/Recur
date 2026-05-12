@@ -12,6 +12,7 @@ export type AppService = {
 
 	upsertSubscription: (subscription: Subscription) => Promise<Subscription>;
 	cancelSubscription: (id: string) => Promise<void>;
+	deleteSubscription: (id: string) => Promise<void>;
 
 	clearAllNotifications: () => Promise<void>;
 	markAllNotificationsRead: () => Promise<void>;
@@ -72,6 +73,9 @@ export function createAppService(
 		},
 		cancelSubscription: async (id: string) => {
 			await repository.cancelSubscription(id);
+		},
+		deleteSubscription: async (id: string) => {
+			await repository.deleteSubscription(id);
 		},
 		clearAllNotifications: async () => {
 			await repository.clearNotifications();

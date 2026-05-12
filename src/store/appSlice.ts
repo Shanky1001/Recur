@@ -3,6 +3,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import { seed, type DummyData, type Notification } from "@/src/data/dummy";
 import { appService } from "@/src/services/appService";
+import { parseIsoLike } from "@/src/utils/helper";
 
 type User = {
 	name: string;
@@ -23,21 +24,33 @@ function deriveDashboard(
 	base: Dashboard,
 	subscriptions: Subscription[],
 ): Dashboard {
-	const activeCount = subscriptions.filter(
+	const activeSubscriptions = subscriptions.filter(
 		(s) => s.status !== "cancelled",
-	).length;
-	const monthlySpend = subscriptions
-		.filter((s) => s.status !== "cancelled")
-		.reduce(
-			(sum, s) =>
-				sum + (Number.isFinite(s.pricePerMonth) ? s.pricePerMonth : 0),
-			0,
-		);
+	);
+
+	const start = new Date();
+	start.setHours(0, 0, 0, 0);
+	const end = new Date(start);
+	end.setDate(end.getDate() + 7);
+	end.setHours(23, 59, 59, 999);
+	const pendingThisWeek = activeSubscriptions.filter((s) => {
+		const next = parseIsoLike(s.nextPaymentDate);
+		if (!next) return false;
+		const t = next.getTime();
+		return t >= start.getTime() && t <= end.getTime();
+	}).length;
+
+	const monthlySpend = activeSubscriptions.reduce(
+		(sum, s) =>
+			sum + (Number.isFinite(s.pricePerMonth) ? s.pricePerMonth : 0),
+		0,
+	);
 
 	return {
 		...base,
-		activeSubscriptions: activeCount,
+		activeSubscriptions: activeSubscriptions.length,
 		totalMonthlySpend: monthlySpend,
+		pendingThisWeek,
 	};
 }
 
@@ -70,6 +83,14 @@ export const cancelSubscription = createAsyncThunk(
 	"subscriptions/cancel",
 	async (id: string) => {
 		await appService.cancelSubscription(id);
+		return id;
+	},
+);
+
+export const deleteSubscription = createAsyncThunk(
+	"subscriptions/delete",
+	async (id: string) => {
+		await appService.deleteSubscription(id);
 		return id;
 	},
 );
@@ -178,6 +199,15 @@ const appSlice = createSlice({
 						break;
 					}
 				}
+				state.dashboard = deriveDashboard(
+					state.dashboard,
+					state.subscriptions,
+				);
+			})
+			.addCase(deleteSubscription.fulfilled, (state, action) => {
+				state.subscriptions = state.subscriptions.filter(
+					(s) => s.id !== action.payload,
+				);
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,

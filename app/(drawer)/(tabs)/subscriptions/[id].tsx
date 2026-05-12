@@ -1,9 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
 	Alert,
+	Dimensions,
 	Image,
+	Modal,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -17,7 +19,11 @@ import type { Subscription } from "@/src/components/subscriptions/SubscriptionCa
 import SubscriptionStatusPill from "@/src/components/subscriptions/SubscriptionStatusPill";
 import Card from "@/src/components/ui/Card";
 import { useAppActions, useSubscriptions } from "@/src/state/appState";
-import { formatCurrency, formatDateLong } from "@/src/utils/helper";
+import {
+	formatCurrency,
+	formatDateLong,
+	parseIsoLike,
+} from "@/src/utils/helper";
 
 function Section({
 	title,
@@ -66,17 +72,6 @@ const styles = StyleSheet.create({
 	},
 });
 
-function parseIso(isoLike: string): Date | null {
-	const d = new Date(isoLike);
-	if (!Number.isNaN(d.getTime())) return d;
-
-	if (/^\d{4}-\d{2}-\d{2}$/.test(isoLike)) {
-		const d2 = new Date(`${isoLike}T00:00:00.000Z`);
-		if (!Number.isNaN(d2.getTime())) return d2;
-	}
-	return null;
-}
-
 function subtractBillingCycle(
 	date: Date,
 	cycle: Subscription["billingCycle"],
@@ -101,7 +96,7 @@ function buildDeductions(
 		subscription.pricePerBillingCycle ?? subscription.pricePerMonth;
 	const amount = formatCurrency(amountNumber, subscription.currencySymbol);
 
-	const next = parseIso(subscription.nextPaymentDate);
+	const next = parseIsoLike(subscription.nextPaymentDate);
 	if (!next) return [];
 
 	const cycle = subscription.billingCycle ?? "Monthly";
@@ -119,8 +114,24 @@ export default function SubscriptionDetailsScreen() {
 	const insets = useSafeAreaInsets();
 	const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
 	const subscriptions = useSubscriptions();
-	const { cancelSubscription, upsertSubscription } = useAppActions();
+	const { cancelSubscription, deleteSubscription, upsertSubscription } =
+		useAppActions();
 	const [saving, setSaving] = useState(false);
+	const [menuOpen, setMenuOpen] = useState(false);
+	const [menuAnchor, setMenuAnchor] = useState<{
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	} | null>(null);
+	const menuButtonRef = useRef<View>(null);
+	const openMenu = () => {
+		menuButtonRef.current?.measureInWindow((x, y, width, height) => {
+			setMenuAnchor({ x, y, width, height });
+			setMenuOpen(true);
+		});
+	};
+	const closeMenu = () => setMenuOpen(false);
 
 	const onBack = () => {
 		if (router.canGoBack()) {
@@ -199,7 +210,33 @@ export default function SubscriptionDetailsScreen() {
 						setSaving(true);
 						try {
 							await cancelSubscription(subscription.id);
-							router.back();
+							closeMenu();
+							onBack();
+						} finally {
+							setSaving(false);
+						}
+					},
+				},
+			],
+		);
+	};
+
+	const onDelete = () => {
+		if (saving) return;
+		Alert.alert(
+			"Delete subscription",
+			"This will permanently remove the subscription from this device.",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Delete",
+					style: "destructive",
+					onPress: async () => {
+						setSaving(true);
+						try {
+							await deleteSubscription(subscription.id);
+							closeMenu();
+							onBack();
 						} finally {
 							setSaving(false);
 						}
@@ -233,14 +270,28 @@ export default function SubscriptionDetailsScreen() {
 				>
 					<Ionicons name="chevron-back" size={22} color="#081126" />
 				</Pressable>
-				<Text className="ml-4 text-xl font-poppins-bold text-foreground">
+				<Text className="ml-4 flex-1 text-xl font-poppins-bold text-foreground">
 					Subscription Details
 				</Text>
+				<Pressable
+					ref={menuButtonRef}
+					onPress={openMenu}
+					hitSlop={10}
+					className="size-11 items-center justify-center rounded-full border border-border bg-white"
+				>
+					<Ionicons
+						name="ellipsis-vertical"
+						size={20}
+						color="#081126"
+					/>
+				</Pressable>
 			</View>
 
 			<ScrollView
 				showsVerticalScrollIndicator={false}
-				contentContainerStyle={{ paddingBottom: 140 }}
+				contentContainerStyle={{
+					paddingBottom: Math.max(insets.bottom, 16) + 24,
+				}}
 			>
 				<Card
 					elevated={false}
@@ -345,42 +396,145 @@ export default function SubscriptionDetailsScreen() {
 				</Section>
 			</ScrollView>
 
-			<View
-				className="absolute left-0 right-0 border-t border-border bg-gray-100 px-4"
-				style={{
-					paddingBottom: Math.max(insets.bottom, 16),
-					bottom: 0,
-				}}
+			<Modal
+				transparent
+				visible={menuOpen}
+				animationType="fade"
+				onRequestClose={closeMenu}
 			>
-				<View className="flex-row gap-3 py-4">
+				<View style={{ flex: 1 }}>
 					<Pressable
-						onPress={onCancel}
-						disabled={saving || subscription.status === "cancelled"}
-						className="flex-1 items-center justify-center rounded-2xl border border-red-400 bg-white py-4"
-						style={({ pressed }) => ({
-							opacity: pressed ? 0.9 : 1,
-						})}
-					>
-						<Text className="text-base font-poppins-bold text-red-500">
-							{subscription.status === "cancelled"
-								? "Cancelled"
-								: "Cancel"}
-						</Text>
-					</Pressable>
-					<Pressable
-						onPress={onChangePlan}
-						disabled={saving}
-						className="flex-1 items-center justify-center rounded-2xl bg-blue-600 py-4"
-						style={({ pressed }) => ({
-							opacity: pressed ? 0.9 : 1,
-						})}
-					>
-						<Text className="text-base font-poppins-bold text-white">
-							Change Plan
-						</Text>
-					</Pressable>
+						style={StyleSheet.absoluteFill}
+						onPress={closeMenu}
+					/>
+					{(() => {
+						if (!menuAnchor) return null;
+						const { width: screenWidth, height: screenHeight } =
+							Dimensions.get("window");
+						const popoverWidth = 220;
+						const popoverHeight = 180;
+						const margin = 8;
+						const preferTop =
+							menuAnchor.y +
+								menuAnchor.height +
+								margin +
+								popoverHeight +
+								16 >
+							screenHeight;
+
+						const top = preferTop
+							? Math.max(
+									margin + insets.top,
+									menuAnchor.y - popoverHeight - margin,
+								)
+							: menuAnchor.y + menuAnchor.height + margin;
+
+						const left = Math.min(
+							screenWidth - popoverWidth - margin,
+							Math.max(
+								margin,
+								menuAnchor.x + menuAnchor.width - popoverWidth,
+							),
+						);
+
+						return (
+							<View
+								style={{
+									position: "absolute",
+									top,
+									left,
+									width: popoverWidth,
+								}}
+							>
+								<View
+									style={{
+										backgroundColor: "white",
+										borderRadius: 16,
+										overflow: "hidden",
+										shadowColor: "#000",
+										shadowOpacity: 0.12,
+										shadowRadius: 16,
+										shadowOffset: { width: 0, height: 8 },
+										elevation: 12,
+									}}
+								>
+									<Pressable
+										onPress={() => {
+											closeMenu();
+											onChangePlan();
+										}}
+										disabled={saving}
+										className="flex-row items-center px-4 py-4"
+										style={({ pressed }) => ({
+											opacity: pressed ? 0.75 : 1,
+										})}
+									>
+										<Ionicons
+											name="swap-horizontal"
+											size={20}
+											color="#081126"
+										/>
+										<Text className="ml-3 text-base font-poppins-semibold text-foreground">
+											Change Plan
+										</Text>
+									</Pressable>
+
+									<View style={styles.divider} />
+
+									<Pressable
+										onPress={() => {
+											closeMenu();
+											onCancel();
+										}}
+										disabled={
+											saving ||
+											subscription.status === "cancelled"
+										}
+										className="flex-row items-center px-4 py-4"
+										style={({ pressed }) => ({
+											opacity: pressed ? 0.75 : 1,
+										})}
+									>
+										<Ionicons
+											name="pause-circle"
+											size={20}
+											color="#081126"
+										/>
+										<Text className="ml-3 text-base font-poppins-semibold text-foreground">
+											{subscription.status === "cancelled"
+												? "Cancelled"
+												: "Cancel"}
+										</Text>
+									</Pressable>
+
+									<View style={styles.divider} />
+
+									<Pressable
+										onPress={() => {
+											closeMenu();
+											onDelete();
+										}}
+										disabled={saving}
+										className="flex-row items-center px-4 py-4"
+										style={({ pressed }) => ({
+											opacity: pressed ? 0.75 : 1,
+										})}
+									>
+										<Ionicons
+											name="trash"
+											size={20}
+											color="#ef4444"
+										/>
+										<Text className="ml-3 text-base font-poppins-semibold text-red-500">
+											Delete
+										</Text>
+									</Pressable>
+								</View>
+							</View>
+						);
+					})()}
 				</View>
-			</View>
+			</Modal>
 		</View>
 	);
 }

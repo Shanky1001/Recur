@@ -175,6 +175,13 @@ export async function cancelSubscription(id: string): Promise<void> {
 	]);
 }
 
+export async function deleteSubscription(id: string): Promise<void> {
+	await initSqlite();
+	const d = db;
+	if (!d) return;
+	await d.runAsync("DELETE FROM subscriptions WHERE id=?", [id]);
+}
+
 export async function clearSubscriptions(): Promise<void> {
 	await initSqlite();
 	const d = db;

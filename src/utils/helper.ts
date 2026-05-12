@@ -30,3 +30,16 @@ export function formatDateLong(isoDate: string): string {
 	const year = date.getFullYear();
 	return `${day} ${month}, ${year}`;
 }
+
+export function parseIsoLike(isoLike: string): Date | null {
+	const d = new Date(isoLike);
+	if (!Number.isNaN(d.getTime())) return d;
+
+	// Support yyyy-mm-dd (treat as UTC midnight)
+	if (/^\d{4}-\d{2}-\d{2}$/.test(isoLike)) {
+		const d2 = new Date(`${isoLike}T00:00:00.000Z`);
+		if (!Number.isNaN(d2.getTime())) return d2;
+	}
+
+	return null;
+}

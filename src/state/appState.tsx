@@ -8,6 +8,7 @@ import {
 	cancelSubscription,
 	clearAllNotifications,
 	deleteNotification,
+	deleteSubscription,
 	hydrateApp,
 	markAllNotificationsRead,
 	markNotificationRead,
@@ -107,6 +108,9 @@ export function useAppActions() {
 			},
 			cancelSubscription: async (id: string) => {
 				await dispatch(cancelSubscription(id)).unwrap();
+			},
+			deleteSubscription: async (id: string) => {
+				await dispatch(deleteSubscription(id)).unwrap();
 			},
 			upsertSubscription: async (subscription: Subscription) => {
 				await dispatch(upsertSubscription(subscription)).unwrap();

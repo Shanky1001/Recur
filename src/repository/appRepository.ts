@@ -16,6 +16,7 @@ export interface AppRepository {
 	loadSubscriptions: () => Promise<Subscription[]>;
 	upsertSubscription: (subscription: Subscription) => Promise<void>;
 	cancelSubscription: (id: string) => Promise<void>;
+	deleteSubscription: (id: string) => Promise<void>;
 
 	loadNotifications: () => Promise<Notification[]>;
 	upsertNotification: (notification: Notification) => Promise<void>;

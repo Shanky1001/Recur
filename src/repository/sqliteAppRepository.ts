@@ -6,6 +6,7 @@ import {
 	cancelSubscription,
 	clearNotifications,
 	deleteNotification,
+	deleteSubscription,
 	initSqlite,
 	loadNotifications,
 	loadSubscriptions,
@@ -35,6 +36,9 @@ export const sqliteAppRepository: AppRepository = {
 	},
 	cancelSubscription: async (id: string) => {
 		await cancelSubscription(id);
+	},
+	deleteSubscription: async (id: string) => {
+		await deleteSubscription(id);
 	},
 	loadNotifications: async () => {
 		return await loadNotifications();
