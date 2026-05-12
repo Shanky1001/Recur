@@ -1,0 +1,94 @@
+export const BILLING_CYCLES = ["Monthly", "Yearly"] as const;
+export type BillingCycle = (typeof BILLING_CYCLES)[number];
+
+export const PAYMENT_METHODS = [
+	"PhonePe Autopay",
+	"UPI Autopay",
+	"Credit Card",
+	"Debit Card",
+	"Netbanking",
+] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const CATEGORIES = [
+	"Entertainment",
+	"Productivity",
+	"Finance",
+	"Shopping",
+	"Utilities",
+	"Other",
+] as const;
+export type Category = (typeof CATEGORIES)[number];
+
+export type ServiceConfig = {
+	name: string;
+	logoUri?: string;
+	plans: readonly string[];
+	defaultCycle: BillingCycle;
+	defaultCost: number;
+	defaultCategory: Category;
+	defaultStatus: "active" | "trial";
+};
+
+export const SERVICES = [
+	{
+		name: "Netflix",
+		logoUri: "https://cdn.simpleicons.org/netflix/E50914",
+		plans: ["Mobile", "Basic", "Standard", "Premium"],
+		defaultCycle: "Monthly",
+		defaultCost: 649,
+		defaultCategory: "Entertainment",
+		defaultStatus: "active",
+	},
+	{
+		name: "YouTube",
+		logoUri: "https://cdn.simpleicons.org/youtube/FF0000",
+		plans: ["Individual", "Family", "Student"],
+		defaultCycle: "Monthly",
+		defaultCost: 149,
+		defaultCategory: "Entertainment",
+		defaultStatus: "trial",
+	},
+	{
+		name: "Notion",
+		logoUri: "https://cdn.simpleicons.org/notion/000000",
+		plans: ["Free", "Plus", "Business"],
+		defaultCycle: "Monthly",
+		defaultCost: 399,
+		defaultCategory: "Productivity",
+		defaultStatus: "active",
+	},
+	{
+		name: "Spotify",
+		logoUri: "https://cdn.simpleicons.org/spotify/1DB954",
+		plans: ["Individual", "Duo", "Family", "Student"],
+		defaultCycle: "Monthly",
+		defaultCost: 119,
+		defaultCategory: "Entertainment",
+		defaultStatus: "active",
+	},
+	{
+		name: "Prime Video",
+		logoUri: "https://cdn.simpleicons.org/primevideo/1F2E5B",
+		plans: ["Monthly", "Yearly"],
+		defaultCycle: "Monthly",
+		defaultCost: 299,
+		defaultCategory: "Entertainment",
+		defaultStatus: "active",
+	},
+	{
+		name: "Disney+",
+		logoUri: "https://cdn.simpleicons.org/disneyplus/113CCF",
+		plans: ["Mobile", "Super", "Premium"],
+		defaultCycle: "Monthly",
+		defaultCost: 299,
+		defaultCategory: "Entertainment",
+		defaultStatus: "active",
+	},
+] as const satisfies readonly ServiceConfig[];
+
+export type ServiceKey = (typeof SERVICES)[number]["name"];
+
+// Prefer this in app code when you need regular array methods like `.includes()` on `plans`.
+// It widens the literal tuple types into the friendly `ServiceConfig` shape.
+export const SERVICES_LIST: readonly ServiceConfig[] = SERVICES;

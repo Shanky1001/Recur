@@ -14,6 +14,11 @@ export type Subscription = {
 	planName: string;
 	pricePerMonth: number;
 	currencySymbol: string;
+	billingCycle?: "Monthly" | "Yearly" | "Weekly";
+	pricePerBillingCycle?: number;
+	paymentMethod?: string;
+	reminderEnabled?: boolean;
+	reminderDaysBefore?: number;
 	nextPaymentDate: string;
 	logoUri?: string;
 };
@@ -98,7 +103,14 @@ export default function SubscriptionCard({
 					</Text>
 					<Text className="mt-1 text-base font-poppins-bold text-foreground">
 						{subscription.planName} – {subscription.currencySymbol}
-						{subscription.pricePerMonth}/mo
+						{subscription.pricePerBillingCycle ??
+							subscription.pricePerMonth}
+						/
+						{subscription.billingCycle === "Yearly"
+							? "yr"
+							: subscription.billingCycle === "Weekly"
+								? "wk"
+								: "mo"}
 					</Text>
 				</View>
 				<View className="flex-1 items-end">

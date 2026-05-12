@@ -1,4 +1,5 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -124,7 +125,7 @@ export default function AppTabBar({
 
 				<Pressable
 					onPress={() => {
-						// TODO: hook up create/add flow
+						router.push("/add-subscription");
 					}}
 					style={({ pressed }) => ({
 						position: "absolute",

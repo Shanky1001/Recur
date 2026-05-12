@@ -23,7 +23,8 @@ type Action =
 	| { type: "notifications/deleteById"; id: string }
 	| { type: "notifications/markRead"; id: string }
 	| { type: "notifications/snooze"; id: string; hours: number }
-	| { type: "subscriptions/cancel"; id: string };
+	| { type: "subscriptions/cancel"; id: string }
+	| { type: "subscriptions/add"; subscription: Subscription };
 
 function addHours(iso: string, hours: number): string {
 	const date = new Date(iso);
@@ -99,6 +100,24 @@ function reducer(state: AppState, action: Action): AppState {
 						0,
 						state.dashboard.activeSubscriptions - 1,
 					),
+				},
+			};
+		}
+		case "subscriptions/add": {
+			const nextSubscriptions = [
+				action.subscription,
+				...state.subscriptions,
+			];
+			const shouldCountAsActive =
+				action.subscription.status !== "cancelled";
+			return {
+				...state,
+				subscriptions: nextSubscriptions,
+				dashboard: {
+					...state.dashboard,
+					activeSubscriptions: shouldCountAsActive
+						? state.dashboard.activeSubscriptions + 1
+						: state.dashboard.activeSubscriptions,
 				},
 			};
 		}
@@ -197,6 +216,8 @@ export function useAppActions() {
 				dispatch({ type: "notifications/snooze", id, hours }),
 			cancelSubscription: (id: string) =>
 				dispatch({ type: "subscriptions/cancel", id }),
+			addSubscription: (subscription: Subscription) =>
+				dispatch({ type: "subscriptions/add", subscription }),
 		}),
 		[dispatch],
 	);
