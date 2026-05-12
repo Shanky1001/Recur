@@ -12,6 +12,7 @@ import CategoryChips from "@/src/components/subscriptions/CategoryChips";
 import SubscriptionCard, {
 	type Subscription,
 } from "@/src/components/subscriptions/SubscriptionCard";
+import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
 
 export type SubscriptionsBottomSheetProps = {
 	subscriptions: Subscription[];
@@ -29,6 +30,7 @@ export default function SubscriptionsBottomSheet({
 	subscriptions,
 }: SubscriptionsBottomSheetProps) {
 	const insets = useSafeAreaInsets();
+	const contentBottomPadding = useTabBarContentPadding(16);
 	const [selectedCategory, setSelectedCategory] = useState("All");
 
 	const categories = useMemo(() => {
@@ -106,7 +108,7 @@ export default function SubscriptionsBottomSheet({
 				ListHeaderComponent={listHeader}
 				ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 				contentContainerStyle={{
-					paddingBottom: Math.max(insets.bottom, 16),
+					paddingBottom: contentBottomPadding,
 					paddingTop: 0,
 				}}
 				style={{ paddingBottom: 12 }}

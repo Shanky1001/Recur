@@ -6,10 +6,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import CategoryChips from "@/src/components/subscriptions/CategoryChips";
 import SubscriptionCard from "@/src/components/subscriptions/SubscriptionCard";
+import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
 import { useSubscriptions } from "@/src/state/appState";
 
 export default function SubscriptionsScreen() {
 	const insets = useSafeAreaInsets();
+	const contentBottomPadding = useTabBarContentPadding(24);
 	const subscriptions = useSubscriptions();
 	const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -52,7 +54,7 @@ export default function SubscriptionsScreen() {
 			<ScrollView
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={{
-					paddingBottom: Math.max(insets.bottom, 24),
+					paddingBottom: contentBottomPadding,
 				}}
 			>
 				{filtered.length === 0 ? (
