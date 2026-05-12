@@ -1,4 +1,4 @@
-# Recur - A mobile application for tracking and managing recurring bill payments.
+# Recurvo - A mobile application for tracking and managing recurring bill payments.
 
 ## Features
 - **Bill Tracking**: Keep track of all your recurring bills in one place, including due dates, amounts, and payment history.

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "recur",
-    "slug": "recur",
+    "name": "Recurvo",
+    "slug": "recurvo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "recur",
+    "scheme": "recurvo",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
