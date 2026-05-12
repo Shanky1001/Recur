@@ -12,7 +12,7 @@ const {
 	colors,
 } = theme;
 
-const PLUS_SIZE = 64;
+const PLUS_SIZE = 50;
 
 export default function AppTabBar({
 	state,
@@ -94,7 +94,7 @@ export default function AppTabBar({
 					height: tabbar.height,
 					borderRadius: tabbar.radius,
 					backgroundColor: colors.primary,
-					paddingHorizontal: 14,
+					paddingHorizontal: 10,
 					flexDirection: "row",
 					alignItems: "center",
 					justifyContent: "space-between",
@@ -129,7 +129,7 @@ export default function AppTabBar({
 					style={({ pressed }) => ({
 						position: "absolute",
 						left: "50%",
-						top: -(PLUS_SIZE * 0.6),
+						top: -(PLUS_SIZE * 0.5),
 						transform: [{ translateX: -(PLUS_SIZE / 2) }],
 						width: PLUS_SIZE,
 						height: PLUS_SIZE,
@@ -147,7 +147,7 @@ export default function AppTabBar({
 					accessibilityRole="button"
 					accessibilityLabel="Add"
 				>
-					{getIcon("add", "MaterialIcons", 40, "black")}
+					{getIcon("add", "MaterialIcons", 36, "black")}
 				</Pressable>
 			</View>
 		</View>

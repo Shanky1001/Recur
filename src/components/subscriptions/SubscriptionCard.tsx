@@ -4,7 +4,7 @@ import { Image, Text, View } from "react-native";
 import Card from "@/src/components/ui/Card";
 import { formatDateLong } from "@/src/utils/helper";
 
-export type SubscriptionStatus = "active" | "trial" | "paused";
+export type SubscriptionStatus = "active" | "trial" | "paused" | "cancelled";
 
 export type Subscription = {
 	id: string;
@@ -22,21 +22,27 @@ function StatusPill({ status }: { status: SubscriptionStatus }) {
 	const label =
 		status === "trial"
 			? "Free Trial"
-			: status === "paused"
-				? "Paused"
-				: "Active";
+			: status === "cancelled"
+				? "Cancelled"
+				: status === "paused"
+					? "Paused"
+					: "Active";
 	const pillClassName =
 		status === "trial"
 			? "bg-blue-50"
-			: status === "paused"
-				? "bg-orange-50"
-				: "bg-green-50";
+			: status === "cancelled"
+				? "bg-slate-100"
+				: status === "paused"
+					? "bg-orange-50"
+					: "bg-green-50";
 	const textClassName =
 		status === "trial"
 			? "text-subscription"
-			: status === "paused"
-				? "text-orange-600"
-				: "text-success";
+			: status === "cancelled"
+				? "text-slate-600"
+				: status === "paused"
+					? "text-orange-600"
+					: "text-success";
 
 	return (
 		<View className={`rounded-lg px-3 py-2 ${pillClassName}`}>

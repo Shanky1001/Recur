@@ -75,7 +75,7 @@ export default function App() {
 							value={dashboard.activeSubscriptions}
 						/>
 						<MetricCard
-							title="Pending this week"
+							title="Renewing this week"
 							value={pad2(dashboard.pendingThisWeek)}
 						/>
 					</View>

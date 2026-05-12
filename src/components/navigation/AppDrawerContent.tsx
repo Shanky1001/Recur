@@ -50,12 +50,6 @@ export default function AppDrawerContent(props: DrawerContentComponentProps) {
 				onPress: () => router.push("/receipts"),
 			},
 			{
-				key: "cvv",
-				label: "CVV",
-				iconName: "key-outline",
-				onPress: () => router.push("/cvv"),
-			},
-			{
 				key: "settings",
 				label: "Settings",
 				iconName: "settings-outline",

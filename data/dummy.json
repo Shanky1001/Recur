@@ -51,6 +51,7 @@
             "title": "Payment due tomorrow",
             "message": "Netflix Premium will renew tomorrow.",
             "type": "billing",
+            "subscriptionId": "netflix",
             "createdAt": "2026-05-11T10:30:00.000Z",
             "read": false
         },
@@ -59,6 +60,7 @@
             "title": "Free trial ending",
             "message": "Your YouTube Premium trial ends in 2 days.",
             "type": "trial",
+            "subscriptionId": "youtube",
             "createdAt": "2026-05-11T08:10:00.000Z",
             "read": false
         },

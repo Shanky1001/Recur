@@ -21,7 +21,16 @@ type Action =
 	| { type: "notifications/clearAll" }
 	| { type: "notifications/markAllRead" }
 	| { type: "notifications/deleteById"; id: string }
-	| { type: "notifications/markRead"; id: string };
+	| { type: "notifications/markRead"; id: string }
+	| { type: "notifications/snooze"; id: string; hours: number }
+	| { type: "subscriptions/cancel"; id: string };
+
+function addHours(iso: string, hours: number): string {
+	const date = new Date(iso);
+	if (Number.isNaN(date.getTime())) return iso;
+	date.setHours(date.getHours() + hours);
+	return date.toISOString();
+}
 
 function reducer(state: AppState, action: Action): AppState {
 	switch (action.type) {
@@ -49,6 +58,50 @@ function reducer(state: AppState, action: Action): AppState {
 					n.id === action.id ? { ...n, read: true } : n,
 				),
 			};
+		case "notifications/snooze": {
+			const existing = state.notifications.find(
+				(n) => n.id === action.id,
+			);
+			if (!existing) return state;
+
+			const nowIso = new Date().toISOString();
+			const snoozed = {
+				...existing,
+				id: `${existing.id}-snooze-${Date.now()}`,
+				read: false,
+				createdAt: addHours(nowIso, action.hours),
+				message: existing.message,
+			};
+
+			return {
+				...state,
+				notifications: state.notifications
+					.map((n) => (n.id === action.id ? { ...n, read: true } : n))
+					.concat([snoozed]),
+			};
+		}
+		case "subscriptions/cancel": {
+			let didChange = false;
+			const nextSubscriptions = state.subscriptions.map((s) => {
+				if (s.id !== action.id) return s;
+				if (s.status === "cancelled") return s;
+				didChange = true;
+				return { ...s, status: "cancelled" as const };
+			});
+			if (!didChange) return state;
+
+			return {
+				...state,
+				subscriptions: nextSubscriptions,
+				dashboard: {
+					...state.dashboard,
+					activeSubscriptions: Math.max(
+						0,
+						state.dashboard.activeSubscriptions - 1,
+					),
+				},
+			};
+		}
 		default:
 			return state;
 	}
@@ -140,6 +193,10 @@ export function useAppActions() {
 				dispatch({ type: "notifications/deleteById", id }),
 			markNotificationRead: (id: string) =>
 				dispatch({ type: "notifications/markRead", id }),
+			snoozeNotification: (id: string, hours: number = 24) =>
+				dispatch({ type: "notifications/snooze", id, hours }),
+			cancelSubscription: (id: string) =>
+				dispatch({ type: "subscriptions/cancel", id }),
 		}),
 		[dispatch],
 	);
