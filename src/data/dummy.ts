@@ -28,6 +28,11 @@ export type DummyData = {
 	};
 	subscriptions: Subscription[];
 	notifications: Notification[];
+	preferences?: {
+		currency: string;
+		defaultReminderDaysBefore: number;
+		defaultReminderEnabled: boolean;
+	};
 };
 
 export const seed = dummyJson as unknown as DummyData;

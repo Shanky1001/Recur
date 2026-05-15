@@ -10,3 +10,10 @@ export type NotificationJob = {
 	expoNotificationId: string; // id returned from scheduleNotificationAsync
 	createdAt: string; // UTC ISO
 };
+
+export type Preferences = {
+	currency: string; // e.g. INR, USD
+	defaultReminderDaysBefore: number;
+	defaultReminderEnabled: boolean;
+	updatedAt?: string; // UTC ISO
+};

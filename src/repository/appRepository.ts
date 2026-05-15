@@ -1,10 +1,11 @@
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import type { Notification } from "@/src/data/dummy";
-import type { NotificationJob } from "@/src/repository/models";
+import type { NotificationJob, Preferences } from "@/src/repository/models";
 
 export type HydratedData = {
 	subscriptions: Subscription[];
 	notifications: Notification[];
+	preferences: Preferences;
 };
 
 export interface AppRepository {
@@ -25,6 +26,10 @@ export interface AppRepository {
 	deleteNotification: (id: string) => Promise<void>;
 	clearNotifications: () => Promise<void>;
 	markAllNotificationsRead: () => Promise<void>;
+
+	loadPreferences: () => Promise<Preferences | null>;
+	upsertPreferences: (preferences: Preferences) => Promise<void>;
+	clearPreferences: () => Promise<void>;
 
 	// Scheduled notification job mapping (Notification Engine uses this)
 	loadNotificationJobs: () => Promise<NotificationJob[]>;

@@ -6,11 +6,14 @@ import type {
 	AppRepository,
 	HydratedData,
 } from "@/src/repository/appRepository";
+import type { Preferences } from "@/src/repository/models";
 import { sqliteAppRepository } from "@/src/repository/sqliteAppRepository";
 
 export type AppService = {
 	hydrate: () => Promise<HydratedData>;
 	resetLocalData: () => Promise<HydratedData>;
+	resyncReminders: (subscriptions: Subscription[]) => Promise<void>;
+	updatePreferences: (preferences: Preferences) => Promise<Preferences>;
 
 	upsertSubscription: (subscription: Subscription) => Promise<Subscription>;
 	cancelSubscription: (id: string) => Promise<void>;
@@ -31,6 +34,17 @@ function nowIsoUtc(): string {
 	return new Date().toISOString();
 }
 
+function defaultPreferences(): Preferences {
+	return {
+		currency: seed.preferences?.currency ?? "INR",
+		defaultReminderDaysBefore:
+			seed.preferences?.defaultReminderDaysBefore ?? 3,
+		defaultReminderEnabled:
+			seed.preferences?.defaultReminderEnabled ?? true,
+		updatedAt: nowIsoUtc(),
+	};
+}
+
 export function createAppService(
 	repository: AppRepository = sqliteAppRepository,
 	notificationEngine: NotificationEngine = createNotificationEngine(
@@ -45,6 +59,11 @@ export function createAppService(
 				seed.subscriptions,
 				seed.notifications,
 			);
+			let preferences = await repository.loadPreferences();
+			if (!preferences) {
+				preferences = defaultPreferences();
+				await repository.upsertPreferences(preferences);
+			}
 			const [subscriptions, notifications] = await Promise.all([
 				repository.loadSubscriptions(),
 				repository.loadNotifications(),
@@ -55,7 +74,7 @@ export function createAppService(
 			} catch {
 				// Notifications are best-effort; never block app startup.
 			}
-			return { subscriptions, notifications };
+			return { subscriptions, notifications, preferences };
 		},
 		resetLocalData: async () => {
 			try {
@@ -68,6 +87,9 @@ export function createAppService(
 				seed.subscriptions,
 				seed.notifications,
 			);
+			await repository.clearPreferences();
+			const preferences = defaultPreferences();
+			await repository.upsertPreferences(preferences);
 			const [subscriptions, notifications] = await Promise.all([
 				repository.loadSubscriptions(),
 				repository.loadNotifications(),
@@ -77,12 +99,36 @@ export function createAppService(
 			} catch {
 				// ignore
 			}
-			return { subscriptions, notifications };
+			return { subscriptions, notifications, preferences };
+		},
+		resyncReminders: async (subscriptions: Subscription[]) => {
+			try {
+				await notificationEngine.bootstrap();
+				await notificationEngine.syncForSubscriptions(subscriptions);
+			} catch {
+				// best-effort
+			}
+		},
+		updatePreferences: async (preferences: Preferences) => {
+			const next: Preferences = {
+				...preferences,
+				updatedAt: nowIsoUtc(),
+			};
+			await repository.upsertPreferences(next);
+			return next;
 		},
 		upsertSubscription: async (subscription: Subscription) => {
+			const prefs =
+				(await repository.loadPreferences()) ?? defaultPreferences();
 			const next: Subscription = {
 				...subscription,
 				createdAt: subscription.createdAt ?? nowIsoUtc(),
+				reminderEnabled:
+					subscription.reminderEnabled ??
+					prefs.defaultReminderEnabled,
+				reminderDaysBefore:
+					subscription.reminderDaysBefore ??
+					prefs.defaultReminderDaysBefore,
 			};
 			await repository.upsertSubscription(next);
 			await notificationEngine.onSubscriptionUpserted(next);

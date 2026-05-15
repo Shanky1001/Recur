@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,7 @@ import { useSubscriptions } from "@/src/state/appState";
 export default function SubscriptionsScreen() {
 	const insets = useSafeAreaInsets();
 	const contentBottomPadding = useTabBarContentPadding(24);
+	const { status } = useLocalSearchParams<{ status?: string }>();
 	const subscriptions = useSubscriptions();
 	const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -24,16 +25,31 @@ export default function SubscriptionsScreen() {
 	}, [subscriptions]);
 
 	const filtered = useMemo(() => {
-		if (selectedCategory === "All") return subscriptions;
-		return subscriptions.filter((s) => s.category === selectedCategory);
-	}, [subscriptions, selectedCategory]);
+		let list = subscriptions;
+		if (
+			status === "trial" ||
+			status === "cancelled" ||
+			status === "active"
+		) {
+			list = list.filter((s) => s.status === status);
+		}
+		if (selectedCategory === "All") return list;
+		return list.filter((s) => s.category === selectedCategory);
+	}, [subscriptions, selectedCategory, status]);
 
 	return (
 		<View className="flex-1 bg-gray-100" style={{ paddingTop: insets.top }}>
 			<View className="flex-row items-center justify-between px-4 py-3">
-				<Text className="text-2xl font-poppins-bold text-foreground">
-					Subscriptions
-				</Text>
+				<View>
+					<Text className="text-2xl font-poppins-bold text-foreground">
+						Subscriptions
+					</Text>
+					{status ? (
+						<Text className="mt-0.5 text-xs font-poppins-medium text-foreground/60">
+							Filtered: {status}
+						</Text>
+					) : null}
+				</View>
 				<Pressable
 					onPress={() => router.push("/add-subscription")}
 					hitSlop={10}

@@ -32,6 +32,7 @@ import {
 import {
 	useAppActions,
 	useDashboard,
+	usePreferences,
 	useSubscriptions,
 } from "@/src/state/appState";
 import { router } from "expo-router";
@@ -45,6 +46,7 @@ function addDays(days: number): string {
 export default function AddSubscriptionScreen() {
 	const insets = useSafeAreaInsets();
 	const dashboard = useDashboard();
+	const preferences = usePreferences();
 	const subscriptions = useSubscriptions();
 	const { addSubscription } = useAppActions();
 
@@ -63,7 +65,9 @@ export default function AddSubscriptionScreen() {
 	const [paymentMethod, setPaymentMethod] = useState<
 		PaymentMethod | undefined
 	>(PAYMENT_METHODS[0]);
-	const [reminderEnabled, setReminderEnabled] = useState(true);
+	const [reminderEnabled, setReminderEnabled] = useState(
+		Boolean(preferences.defaultReminderEnabled ?? true),
+	);
 	const [category, setCategory] = useState<Category>(
 		serviceConfig.defaultCategory ?? "Other",
 	);
@@ -123,7 +127,7 @@ export default function AddSubscriptionScreen() {
 			pricePerMonth,
 			paymentMethod,
 			reminderEnabled,
-			reminderDaysBefore: 3,
+			reminderDaysBefore: preferences.defaultReminderDaysBefore ?? 3,
 			nextPaymentDate,
 			logoUri: serviceConfig.logoUri,
 		});

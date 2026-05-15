@@ -103,5 +103,10 @@
             "createdAt": "2026-05-09T18:45:00.000Z",
             "read": true
         }
-    ]
+    ],
+    "preferences": {
+        "currency": "INR",
+        "defaultReminderDaysBefore": 3,
+        "defaultReminderEnabled": true
+    }
 }

@@ -13,7 +13,9 @@ import {
 	markAllNotificationsRead,
 	markNotificationRead,
 	resetLocalData,
+	resyncReminders,
 	snoozeNotification,
+	updatePreferences,
 	upsertSubscription,
 } from "@/src/store/appSlice";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -31,6 +33,11 @@ export type AppState = {
 	dashboard: Dashboard;
 	subscriptions: Subscription[];
 	notifications: Notification[];
+	preferences: {
+		currency: string;
+		defaultReminderDaysBefore: number;
+		defaultReminderEnabled: boolean;
+	};
 };
 
 function AppBootstrap({ children }: { children: React.ReactNode }) {
@@ -60,6 +67,7 @@ export function useAppState() {
 		dashboard: app.dashboard,
 		subscriptions: app.subscriptions,
 		notifications: app.notifications,
+		preferences: app.preferences,
 	};
 	return { state, unreadCount };
 }
@@ -80,6 +88,10 @@ export function useNotificationsList() {
 	return useAppSelector((s: RootState) => s.app.notifications);
 }
 
+export function usePreferences() {
+	return useAppSelector((s: RootState) => s.app.preferences);
+}
+
 export function useUnreadCount() {
 	return useAppState().unreadCount;
 }
@@ -93,6 +105,16 @@ export function useAppActions() {
 			},
 			clearAllNotifications: async () => {
 				await dispatch(clearAllNotifications()).unwrap();
+			},
+			resyncReminders: async () => {
+				await dispatch(resyncReminders()).unwrap();
+			},
+			updatePreferences: async (partial: {
+				currency?: string;
+				defaultReminderDaysBefore?: number;
+				defaultReminderEnabled?: boolean;
+			}) => {
+				await dispatch(updatePreferences(partial)).unwrap();
 			},
 			markAllNotificationsRead: async () => {
 				await dispatch(markAllNotificationsRead()).unwrap();

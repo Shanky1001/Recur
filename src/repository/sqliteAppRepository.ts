@@ -7,6 +7,7 @@ import {
 	cancelSubscription,
 	clearNotificationJobs,
 	clearNotifications,
+	clearPreferences,
 	deleteNotification,
 	deleteNotificationJob,
 	deleteNotificationJobsBySubscriptionId,
@@ -15,6 +16,7 @@ import {
 	initSqlite,
 	loadNotificationJobs,
 	loadNotifications,
+	loadPreferences,
 	loadSubscriptions,
 	markAllNotificationsRead,
 	markNotificationRead,
@@ -22,6 +24,7 @@ import {
 	seedIfEmpty,
 	upsertNotification,
 	upsertNotificationJob,
+	upsertPreferences,
 	upsertSubscription,
 } from "@/src/db/sqlite";
 
@@ -64,6 +67,15 @@ export const sqliteAppRepository: AppRepository = {
 	},
 	markAllNotificationsRead: async () => {
 		await markAllNotificationsRead();
+	},
+	loadPreferences: async () => {
+		return await loadPreferences();
+	},
+	upsertPreferences: async (preferences) => {
+		await upsertPreferences(preferences);
+	},
+	clearPreferences: async () => {
+		await clearPreferences();
 	},
 	loadNotificationJobs: async () => {
 		return await loadNotificationJobs();

@@ -5,6 +5,12 @@ import { seed, type DummyData, type Notification } from "@/src/data/dummy";
 import { appService } from "@/src/services/appService";
 import { parseIsoLike } from "@/src/utils/helper";
 
+export type PreferencesState = {
+	currency: string;
+	defaultReminderDaysBefore: number;
+	defaultReminderEnabled: boolean;
+};
+
 type User = {
 	name: string;
 	avatarUri: string;
@@ -17,6 +23,7 @@ export type AppState = {
 	dashboard: Dashboard;
 	subscriptions: Subscription[];
 	notifications: Notification[];
+	preferences: PreferencesState;
 	hydrated: boolean;
 };
 
@@ -65,6 +72,19 @@ export const resetLocalData = createAsyncThunk(
 	},
 );
 
+export const updatePreferences = createAsyncThunk(
+	"preferences/update",
+	async (partial: Partial<PreferencesState>, { getState }) => {
+		const state = getState() as { app: AppState };
+		const next: PreferencesState = {
+			...state.app.preferences,
+			...partial,
+		};
+		await appService.updatePreferences(next);
+		return next;
+	},
+);
+
 export const addSubscription = createAsyncThunk(
 	"subscriptions/add",
 	async (subscription: Subscription) => {
@@ -99,6 +119,15 @@ export const clearAllNotifications = createAsyncThunk(
 	"notifications/clearAll",
 	async () => {
 		await appService.clearAllNotifications();
+		return true;
+	},
+);
+
+export const resyncReminders = createAsyncThunk(
+	"notifications/resyncReminders",
+	async (_, { getState }) => {
+		const state = getState() as { app: AppState };
+		await appService.resyncReminders(state.app.subscriptions);
 		return true;
 	},
 );
@@ -147,6 +176,13 @@ const initialState: AppState = {
 	dashboard: seed.dashboard,
 	subscriptions: seed.subscriptions,
 	notifications: seed.notifications,
+	preferences: {
+		currency: seed.preferences?.currency ?? "INR",
+		defaultReminderDaysBefore:
+			seed.preferences?.defaultReminderDaysBefore ?? 3,
+		defaultReminderEnabled:
+			seed.preferences?.defaultReminderEnabled ?? true,
+	},
 	hydrated: false,
 };
 
@@ -159,6 +195,13 @@ const appSlice = createSlice({
 			.addCase(hydrateApp.fulfilled, (state, action) => {
 				state.subscriptions = action.payload.subscriptions;
 				state.notifications = action.payload.notifications;
+				state.preferences = {
+					currency: action.payload.preferences.currency,
+					defaultReminderDaysBefore:
+						action.payload.preferences.defaultReminderDaysBefore,
+					defaultReminderEnabled:
+						action.payload.preferences.defaultReminderEnabled,
+				};
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,
@@ -168,11 +211,21 @@ const appSlice = createSlice({
 			.addCase(resetLocalData.fulfilled, (state, action) => {
 				state.subscriptions = action.payload.subscriptions;
 				state.notifications = action.payload.notifications;
+				state.preferences = {
+					currency: action.payload.preferences.currency,
+					defaultReminderDaysBefore:
+						action.payload.preferences.defaultReminderDaysBefore,
+					defaultReminderEnabled:
+						action.payload.preferences.defaultReminderEnabled,
+				};
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,
 				);
 				state.hydrated = true;
+			})
+			.addCase(updatePreferences.fulfilled, (state, action) => {
+				state.preferences = action.payload;
 			})
 			.addCase(addSubscription.fulfilled, (state, action) => {
 				state.subscriptions = [action.payload, ...state.subscriptions];
