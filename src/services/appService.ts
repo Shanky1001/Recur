@@ -1,5 +1,7 @@
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import { seed, type Notification } from "@/src/data/dummy";
+import type { NotificationEngine } from "@/src/notifications";
+import { createNotificationEngine } from "@/src/notifications";
 import type {
 	AppRepository,
 	HydratedData,
@@ -29,15 +31,12 @@ function nowIsoUtc(): string {
 	return new Date().toISOString();
 }
 
-function addHours(iso: string, hours: number): string {
-	const date = new Date(iso);
-	if (Number.isNaN(date.getTime())) return iso;
-	date.setHours(date.getHours() + hours);
-	return date.toISOString();
-}
-
 export function createAppService(
 	repository: AppRepository = sqliteAppRepository,
+	notificationEngine: NotificationEngine = createNotificationEngine(
+		repository,
+		"expo",
+	),
 ): AppService {
 	return {
 		hydrate: async () => {
@@ -50,9 +49,21 @@ export function createAppService(
 				repository.loadSubscriptions(),
 				repository.loadNotifications(),
 			]);
+			try {
+				await notificationEngine.bootstrap();
+				await notificationEngine.syncForSubscriptions(subscriptions);
+			} catch {
+				// Notifications are best-effort; never block app startup.
+			}
 			return { subscriptions, notifications };
 		},
 		resetLocalData: async () => {
+			try {
+				await notificationEngine.bootstrap();
+				await notificationEngine.clearAllScheduled();
+			} catch {
+				// ignore
+			}
 			await repository.resetLocalData(
 				seed.subscriptions,
 				seed.notifications,
@@ -61,6 +72,11 @@ export function createAppService(
 				repository.loadSubscriptions(),
 				repository.loadNotifications(),
 			]);
+			try {
+				await notificationEngine.syncForSubscriptions(subscriptions);
+			} catch {
+				// ignore
+			}
 			return { subscriptions, notifications };
 		},
 		upsertSubscription: async (subscription: Subscription) => {
@@ -69,13 +85,16 @@ export function createAppService(
 				createdAt: subscription.createdAt ?? nowIsoUtc(),
 			};
 			await repository.upsertSubscription(next);
+			await notificationEngine.onSubscriptionUpserted(next);
 			return next;
 		},
 		cancelSubscription: async (id: string) => {
 			await repository.cancelSubscription(id);
+			await notificationEngine.onSubscriptionCancelled(id);
 		},
 		deleteSubscription: async (id: string) => {
 			await repository.deleteSubscription(id);
+			await notificationEngine.onSubscriptionDeleted(id);
 		},
 		clearAllNotifications: async () => {
 			await repository.clearNotifications();
@@ -90,17 +109,11 @@ export function createAppService(
 			await repository.markNotificationRead(id);
 		},
 		snoozeNotification: async ({ id, hours, notifications }) => {
-			const existing = notifications.find((n) => n.id === id);
-			if (!existing) return null;
-			const snoozed: Notification = {
-				...existing,
-				id: `${existing.id}-snooze-${Date.now()}`,
-				read: false,
-				createdAt: addHours(nowIsoUtc(), hours),
-			};
-			await repository.markNotificationRead(id);
-			await repository.upsertNotification(snoozed);
-			return { id, snoozed };
+			return await notificationEngine.snoozeNotification({
+				id,
+				hours,
+				notifications,
+			});
 		},
 	};
 }

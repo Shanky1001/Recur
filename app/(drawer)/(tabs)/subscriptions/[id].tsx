@@ -18,12 +18,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import SubscriptionStatusPill from "@/src/components/subscriptions/SubscriptionStatusPill";
 import Card from "@/src/components/ui/Card";
+import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
 import { useAppActions, useSubscriptions } from "@/src/state/appState";
 import {
 	formatCurrency,
 	formatDateLong,
 	parseIsoLike,
 } from "@/src/utils/helper";
+import { computeNextRenewalIso } from "@/src/utils/renewal";
 
 function Section({
 	title,
@@ -89,29 +91,66 @@ function subtractBillingCycle(
 	return d;
 }
 
+function addBillingCycle(
+	date: Date,
+	cycle: Subscription["billingCycle"],
+): Date {
+	const d = new Date(date);
+	if (cycle === "Yearly") {
+		d.setFullYear(d.getFullYear() + 1);
+		return d;
+	}
+	if (cycle === "Weekly") {
+		d.setDate(d.getDate() + 7);
+		return d;
+	}
+	d.setMonth(d.getMonth() + 1);
+	return d;
+}
+
 function buildDeductions(
 	subscription: Subscription,
 ): { amount: string; date: string }[] {
 	const amountNumber =
 		subscription.pricePerBillingCycle ?? subscription.pricePerMonth;
 	const amount = formatCurrency(amountNumber, subscription.currencySymbol);
-
-	const next = parseIsoLike(subscription.nextPaymentDate);
-	if (!next) return [];
+	const createdAt = subscription.createdAt
+		? parseIsoLike(subscription.createdAt)
+		: null;
+	if (!createdAt) return [];
 
 	const cycle = subscription.billingCycle ?? "Monthly";
-	const one = subtractBillingCycle(next, cycle);
-	const two = subtractBillingCycle(one, cycle);
-	const three = subtractBillingCycle(two, cycle);
+	const effectiveNextIso =
+		computeNextRenewalIso(subscription) ?? subscription.nextPaymentDate;
+	const next = parseIsoLike(effectiveNextIso);
+	if (!next) return [];
 
-	return [one, two, three].map((dt) => ({
-		amount,
-		date: formatDateLong(dt.toISOString()),
-	}));
+	// First possible deduction happens after 1 full cycle since createdAt.
+	const firstDeduction = addBillingCycle(createdAt, cycle);
+	const now = new Date();
+
+	// Start from the last payment date (one cycle before next).
+	let cursor = subtractBillingCycle(next, cycle);
+	const out: { amount: string; date: string }[] = [];
+	let guard = 0;
+	while (guard < 24) {
+		guard++;
+		if (cursor.getTime() < firstDeduction.getTime()) break;
+		if (cursor.getTime() > now.getTime()) {
+			cursor = subtractBillingCycle(cursor, cycle);
+			continue;
+		}
+		out.push({ amount, date: formatDateLong(cursor.toISOString()) });
+		if (out.length >= 6) break;
+		cursor = subtractBillingCycle(cursor, cycle);
+	}
+
+	return out;
 }
 
 export default function SubscriptionDetailsScreen() {
 	const insets = useSafeAreaInsets();
+	const contentBottomPadding = useTabBarContentPadding(24);
 	const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
 	const subscriptions = useSubscriptions();
 	const { cancelSubscription, deleteSubscription, upsertSubscription } =
@@ -290,7 +329,7 @@ export default function SubscriptionDetailsScreen() {
 			<ScrollView
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={{
-					paddingBottom: Math.max(insets.bottom, 16) + 24,
+					paddingBottom: contentBottomPadding,
 				}}
 			>
 				<Card

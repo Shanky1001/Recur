@@ -19,7 +19,12 @@
             "planName": "Premium",
             "pricePerMonth": 649,
             "currencySymbol": "₹",
-            "nextPaymentDate": "2025-06-12",
+            "billingCycle": "Monthly",
+            "paymentMethod": "Visa •••• 1234",
+            "reminderEnabled": true,
+            "reminderDaysBefore": 3,
+            "createdAt": "2026-02-12T00:00:00.000Z",
+            "nextPaymentDate": "2026-06-12",
             "logoUri": "https://cdn.simpleicons.org/netflix/E50914"
         },
         {
@@ -30,7 +35,12 @@
             "planName": "Premium",
             "pricePerMonth": 149,
             "currencySymbol": "₹",
-            "nextPaymentDate": "2025-06-18",
+            "billingCycle": "Monthly",
+            "paymentMethod": "UPI",
+            "reminderEnabled": true,
+            "reminderDaysBefore": 2,
+            "createdAt": "2026-05-04T00:00:00.000Z",
+            "nextPaymentDate": "2026-06-04",
             "logoUri": "https://cdn.simpleicons.org/youtube/FF0000"
         },
         {
@@ -41,7 +51,12 @@
             "planName": "Plus",
             "pricePerMonth": 399,
             "currencySymbol": "₹",
-            "nextPaymentDate": "2025-06-20",
+            "billingCycle": "Monthly",
+            "paymentMethod": "Mastercard •••• 9876",
+            "reminderEnabled": false,
+            "reminderDaysBefore": 3,
+            "createdAt": "2025-11-20T00:00:00.000Z",
+            "nextPaymentDate": "2026-05-20",
             "logoUri": "https://cdn.simpleicons.org/notion/000000"
         }
     ],
@@ -49,7 +64,7 @@
         {
             "id": "n1",
             "title": "Payment due tomorrow",
-            "message": "Netflix Premium will renew tomorrow.",
+            "message": "Netflix Premium will renew on 12 June.",
             "type": "billing",
             "subscriptionId": "netflix",
             "createdAt": "2026-05-11T10:30:00.000Z",
@@ -58,7 +73,7 @@
         {
             "id": "n2",
             "title": "Free trial ending",
-            "message": "Your YouTube Premium trial ends in 2 days.",
+            "message": "Your YouTube Premium trial ends on 4 June.",
             "type": "trial",
             "subscriptionId": "youtube",
             "createdAt": "2026-05-11T08:10:00.000Z",
