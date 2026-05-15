@@ -8,6 +8,7 @@ import {
 	clearNotificationJobs,
 	clearNotifications,
 	clearPreferences,
+	clearUserProfile,
 	deleteNotification,
 	deleteNotificationJob,
 	deleteNotificationJobsBySubscriptionId,
@@ -18,25 +19,20 @@ import {
 	loadNotifications,
 	loadPreferences,
 	loadSubscriptions,
+	loadUserProfile,
 	markAllNotificationsRead,
 	markNotificationRead,
 	resetLocalData,
-	seedIfEmpty,
 	upsertNotification,
 	upsertNotificationJob,
 	upsertPreferences,
 	upsertSubscription,
+	upsertUserProfile,
 } from "@/src/db/sqlite";
 
 export const sqliteAppRepository: AppRepository = {
 	init: async () => {
 		await initSqlite();
-	},
-	seedIfEmpty: async (
-		seedSubscriptions: Subscription[],
-		seedNotifications: Notification[],
-	) => {
-		await seedIfEmpty(seedSubscriptions, seedNotifications);
 	},
 	loadSubscriptions: async () => {
 		return await loadSubscriptions();
@@ -68,6 +64,15 @@ export const sqliteAppRepository: AppRepository = {
 	markAllNotificationsRead: async () => {
 		await markAllNotificationsRead();
 	},
+	loadUserProfile: async () => {
+		return await loadUserProfile();
+	},
+	upsertUserProfile: async (profile) => {
+		await upsertUserProfile(profile);
+	},
+	clearUserProfile: async () => {
+		await clearUserProfile();
+	},
 	loadPreferences: async () => {
 		return await loadPreferences();
 	},
@@ -95,10 +100,7 @@ export const sqliteAppRepository: AppRepository = {
 	clearNotificationJobs: async () => {
 		await clearNotificationJobs();
 	},
-	resetLocalData: async (
-		seedSubscriptions: Subscription[],
-		seedNotifications: Notification[],
-	) => {
-		await resetLocalData(seedSubscriptions, seedNotifications);
+	resetLocalData: async () => {
+		await resetLocalData();
 	},
 };

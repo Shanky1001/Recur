@@ -5,7 +5,7 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import CategoryChips from "@/src/components/subscriptions/CategoryChips";
@@ -74,16 +74,87 @@ export default function SubscriptionsBottomSheet({
 					</Text>
 				</View>
 
-				<View className="pb-4">
-					<CategoryChips
-						categories={categories}
-						selected={selectedCategory}
-						onSelect={setSelectedCategory}
-					/>
-				</View>
+				{subscriptions.length > 0 && categories.length > 1 ? (
+					<View className="pb-4">
+						<CategoryChips
+							categories={categories}
+							selected={selectedCategory}
+							onSelect={setSelectedCategory}
+						/>
+					</View>
+				) : (
+					<View className="pb-4" />
+				)}
 			</>
 		);
-	}, [categories, selectedCategory]);
+	}, [categories, selectedCategory, subscriptions.length]);
+
+	const listEmpty = useMemo(() => {
+		const isEmptyAll = subscriptions.length === 0;
+		const isFiltered = selectedCategory !== "All";
+		const title = isEmptyAll
+			? "No subscriptions yet"
+			: isFiltered
+				? "No subscriptions in this category"
+				: "Nothing to show";
+		const body = isEmptyAll
+			? "Add your first subscription to start tracking renewals."
+			: isFiltered
+				? "Try switching back to All categories."
+				: "";
+
+		return (
+			<View className="px-6 py-12 items-center">
+				<View className="size-16 items-center justify-center rounded-3xl bg-black/5">
+					<Ionicons name="albums-outline" size={28} color="#2563EB" />
+				</View>
+				<Text className="mt-4 text-xl font-poppins-bold text-foreground">
+					{title}
+				</Text>
+				{body ? (
+					<Text className="mt-2 text-sm font-poppins-medium text-foreground/60 text-center">
+						{body}
+					</Text>
+				) : null}
+
+				<View className="mt-6 w-full">
+					{isEmptyAll ? (
+						<Pressable
+							onPress={() => router.push("/add-subscription")}
+							className="rounded-2xl bg-blue-600 px-4 py-4"
+							style={({ pressed }) => ({
+								opacity: pressed ? 0.9 : 1,
+							})}
+							hitSlop={10}
+						>
+							<Text className="text-center text-base font-poppins-bold text-white">
+								Add subscription
+							</Text>
+						</Pressable>
+					) : null}
+
+					{isFiltered ? (
+						<Pressable
+							onPress={() => setSelectedCategory("All")}
+							className={
+								isEmptyAll
+									? "mt-3 rounded-2xl border border-border bg-white px-4 py-4"
+									: "rounded-2xl border border-border bg-white px-4 py-4"
+							}
+							style={({ pressed }) => ({
+								opacity: pressed ? 0.9 : 1,
+							})}
+							hitSlop={10}
+						>
+							<Text className="text-center text-base font-poppins-semibold text-foreground">
+								View all
+							</Text>
+						</Pressable>
+					) : null}
+				</View>
+			</View>
+		);
+	}, [selectedCategory, subscriptions.length]);
 
 	return (
 		<BottomSheet
@@ -106,6 +177,7 @@ export default function SubscriptionsBottomSheet({
 				showsVerticalScrollIndicator={false}
 				keyboardShouldPersistTaps="handled"
 				ListHeaderComponent={listHeader}
+				ListEmptyComponent={listEmpty}
 				ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
 				contentContainerStyle={{
 					paddingBottom: contentBottomPadding,

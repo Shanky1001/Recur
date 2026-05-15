@@ -15,5 +15,12 @@ export type Preferences = {
 	currency: string; // e.g. INR, USD
 	defaultReminderDaysBefore: number;
 	defaultReminderEnabled: boolean;
+	hasOnboarded?: boolean;
+	updatedAt?: string; // UTC ISO
+};
+
+export type UserProfile = {
+	name: string;
+	avatarUri: string;
 	updatedAt?: string; // UTC ISO
 };

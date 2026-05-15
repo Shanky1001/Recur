@@ -1,12 +1,12 @@
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
-import { seed, type Notification } from "@/src/data/dummy";
+import type { Notification } from "@/src/data/dummy";
 import type { NotificationEngine } from "@/src/notifications";
 import { createNotificationEngine } from "@/src/notifications";
 import type {
 	AppRepository,
 	HydratedData,
 } from "@/src/repository/appRepository";
-import type { Preferences } from "@/src/repository/models";
+import type { Preferences, UserProfile } from "@/src/repository/models";
 import { sqliteAppRepository } from "@/src/repository/sqliteAppRepository";
 
 export type AppService = {
@@ -14,6 +14,7 @@ export type AppService = {
 	resetLocalData: () => Promise<HydratedData>;
 	resyncReminders: (subscriptions: Subscription[]) => Promise<void>;
 	updatePreferences: (preferences: Preferences) => Promise<Preferences>;
+	updateUserProfile: (profile: UserProfile) => Promise<UserProfile>;
 
 	upsertSubscription: (subscription: Subscription) => Promise<Subscription>;
 	cancelSubscription: (id: string) => Promise<void>;
@@ -36,11 +37,18 @@ function nowIsoUtc(): string {
 
 function defaultPreferences(): Preferences {
 	return {
-		currency: seed.preferences?.currency ?? "INR",
-		defaultReminderDaysBefore:
-			seed.preferences?.defaultReminderDaysBefore ?? 3,
-		defaultReminderEnabled:
-			seed.preferences?.defaultReminderEnabled ?? true,
+		currency: "INR",
+		defaultReminderDaysBefore: 3,
+		defaultReminderEnabled: true,
+		hasOnboarded: false,
+		updatedAt: nowIsoUtc(),
+	};
+}
+
+function defaultUserProfile(): UserProfile {
+	return {
+		name: "User",
+		avatarUri: "https://i.pravatar.cc/150?img=12",
 		updatedAt: nowIsoUtc(),
 	};
 }
@@ -55,10 +63,12 @@ export function createAppService(
 	return {
 		hydrate: async () => {
 			await repository.init();
-			await repository.seedIfEmpty(
-				seed.subscriptions,
-				seed.notifications,
-			);
+			let user = await repository.loadUserProfile();
+			if (!user || (!user.name && !user.avatarUri)) {
+				user = defaultUserProfile();
+				await repository.upsertUserProfile(user);
+			}
+
 			let preferences = await repository.loadPreferences();
 			if (!preferences) {
 				preferences = defaultPreferences();
@@ -74,7 +84,7 @@ export function createAppService(
 			} catch {
 				// Notifications are best-effort; never block app startup.
 			}
-			return { subscriptions, notifications, preferences };
+			return { user, subscriptions, notifications, preferences };
 		},
 		resetLocalData: async () => {
 			try {
@@ -83,10 +93,10 @@ export function createAppService(
 			} catch {
 				// ignore
 			}
-			await repository.resetLocalData(
-				seed.subscriptions,
-				seed.notifications,
-			);
+			await repository.resetLocalData();
+			await repository.clearUserProfile();
+			const user = defaultUserProfile();
+			await repository.upsertUserProfile(user);
 			await repository.clearPreferences();
 			const preferences = defaultPreferences();
 			await repository.upsertPreferences(preferences);
@@ -99,7 +109,7 @@ export function createAppService(
 			} catch {
 				// ignore
 			}
-			return { subscriptions, notifications, preferences };
+			return { user, subscriptions, notifications, preferences };
 		},
 		resyncReminders: async (subscriptions: Subscription[]) => {
 			try {
@@ -115,6 +125,14 @@ export function createAppService(
 				updatedAt: nowIsoUtc(),
 			};
 			await repository.upsertPreferences(next);
+			return next;
+		},
+		updateUserProfile: async (profile: UserProfile) => {
+			const next: UserProfile = {
+				...profile,
+				updatedAt: nowIsoUtc(),
+			};
+			await repository.upsertUserProfile(next);
 			return next;
 		},
 		upsertSubscription: async (subscription: Subscription) => {

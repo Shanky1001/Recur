@@ -32,6 +32,7 @@ export type DummyData = {
 		currency: string;
 		defaultReminderDaysBefore: number;
 		defaultReminderEnabled: boolean;
+		hasOnboarded?: boolean;
 	};
 };
 

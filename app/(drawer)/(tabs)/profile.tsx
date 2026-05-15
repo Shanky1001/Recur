@@ -254,23 +254,36 @@ export default function ProfileScreen() {
 				</View>
 
 				<View className="px-4 pt-4">
-					<Card className="px-5 py-5">
-						<View className="flex-row items-center">
-							<Image
-								source={{ uri: user.avatarUri }}
-								className="size-16 rounded-full"
-								resizeMode="cover"
-							/>
-							<View className="ml-4 flex-1">
-								<Text className="text-xl font-poppins-bold text-foreground">
-									{user.name}
-								</Text>
-								<Text className="mt-1 text-sm font-poppins-medium text-foreground/60">
-									Manage your preferences & insights
-								</Text>
+					<Pressable
+						onPress={() => router.push("/edit-profile")}
+						hitSlop={10}
+						style={({ pressed }) => ({
+							opacity: pressed ? 0.92 : 1,
+						})}
+					>
+						<Card className="px-5 py-5">
+							<View className="flex-row items-center">
+								<Image
+									source={{ uri: user.avatarUri }}
+									className="size-16 rounded-full"
+									resizeMode="cover"
+								/>
+								<View className="ml-4 flex-1">
+									<Text className="text-xl font-poppins-bold text-foreground">
+										{user.name}
+									</Text>
+									<Text className="mt-1 text-sm font-poppins-medium text-foreground/60">
+										Tap to edit profile
+									</Text>
+								</View>
+								<Ionicons
+									name="pencil"
+									size={18}
+									color="#94a3b8"
+								/>
 							</View>
-						</View>
-					</Card>
+						</Card>
+					</Pressable>
 				</View>
 
 				<Section title="Overview">

@@ -286,7 +286,10 @@ export default function SubscriptionDetailsScreen() {
 	};
 
 	const onChangePlan = () => {
-		Alert.alert("Change plan", "Plan editing UI isn’t implemented yet.");
+		router.push({
+			pathname: "/edit-subscription/[id]",
+			params: { id: subscription.id },
+		});
 	};
 
 	const billingCycleLabel = subscription.billingCycle ?? "Monthly";

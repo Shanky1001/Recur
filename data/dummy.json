@@ -107,6 +107,7 @@
     "preferences": {
         "currency": "INR",
         "defaultReminderDaysBefore": 3,
-        "defaultReminderEnabled": true
+        "defaultReminderEnabled": true,
+        "hasOnboarded": false
     }
 }

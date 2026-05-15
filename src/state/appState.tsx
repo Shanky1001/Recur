@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { Provider } from "react-redux";
 
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
-import type { DummyData, Notification } from "@/src/data/dummy";
+import type { Notification } from "@/src/data/dummy";
 import {
 	addSubscription,
 	cancelSubscription,
@@ -16,6 +16,7 @@ import {
 	resyncReminders,
 	snoozeNotification,
 	updatePreferences,
+	updateUserProfile,
 	upsertSubscription,
 } from "@/src/store/appSlice";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -26,7 +27,12 @@ type User = {
 	avatarUri: string;
 };
 
-type Dashboard = DummyData["dashboard"];
+type Dashboard = {
+	currencySymbol: string;
+	totalMonthlySpend: number;
+	activeSubscriptions: number;
+	pendingThisWeek: number;
+};
 
 export type AppState = {
 	user: User;
@@ -37,6 +43,7 @@ export type AppState = {
 		currency: string;
 		defaultReminderDaysBefore: number;
 		defaultReminderEnabled: boolean;
+		hasOnboarded: boolean;
 	};
 };
 
@@ -113,8 +120,15 @@ export function useAppActions() {
 				currency?: string;
 				defaultReminderDaysBefore?: number;
 				defaultReminderEnabled?: boolean;
+				hasOnboarded?: boolean;
 			}) => {
 				await dispatch(updatePreferences(partial)).unwrap();
+			},
+			updateUserProfile: async (partial: {
+				name?: string;
+				avatarUri?: string;
+			}) => {
+				await dispatch(updateUserProfile(partial)).unwrap();
 			},
 			markAllNotificationsRead: async () => {
 				await dispatch(markAllNotificationsRead()).unwrap();

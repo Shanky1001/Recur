@@ -114,7 +114,7 @@ export default function SettingsScreen() {
 		if (busy) return;
 		Alert.alert(
 			"Reset local data",
-			"This will wipe your local subscriptions & notifications and re-seed from dummy data.",
+			"This will wipe your local subscriptions, notifications, profile and preferences on this device.",
 			[
 				{ text: "Cancel", style: "cancel" },
 				{
@@ -124,6 +124,7 @@ export default function SettingsScreen() {
 						setBusy("reset");
 						try {
 							await resetLocalData();
+							router.replace("/onboarding");
 						} finally {
 							setBusy(null);
 						}
@@ -268,7 +269,7 @@ export default function SettingsScreen() {
 							<Row
 								icon="warning-outline"
 								label="Reset local data"
-								subLabel="Wipes SQLite and re-seeds from dummy.json"
+								subLabel="Clears SQLite and restarts onboarding"
 								variant="danger"
 								onPress={onReset}
 								disabled={busy !== null}

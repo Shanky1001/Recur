@@ -60,11 +60,13 @@ export default function SubscriptionsScreen() {
 			</View>
 
 			<View className="pb-3">
-				<CategoryChips
-					categories={categories}
-					selected={selectedCategory}
-					onSelect={setSelectedCategory}
-				/>
+				{subscriptions.length > 0 && categories.length > 1 ? (
+					<CategoryChips
+						categories={categories}
+						selected={selectedCategory}
+						onSelect={setSelectedCategory}
+					/>
+				) : null}
 			</View>
 
 			<ScrollView
@@ -74,10 +76,61 @@ export default function SubscriptionsScreen() {
 				}}
 			>
 				{filtered.length === 0 ? (
-					<View className="px-4 py-10">
-						<Text className="text-base font-poppins-medium text-foreground/60">
-							No subscriptions yet.
+					<View className="px-6 py-14 items-center">
+						<View className="size-16 items-center justify-center rounded-3xl bg-white border border-border">
+							<Ionicons
+								name="sparkles-outline"
+								size={28}
+								color="#2563EB"
+							/>
+						</View>
+						<Text className="mt-4 text-xl font-poppins-bold text-foreground">
+							{subscriptions.length === 0
+								? "No subscriptions yet"
+								: "No matching subscriptions"}
 						</Text>
+						<Text className="mt-2 text-sm font-poppins-medium text-foreground/60 text-center">
+							{subscriptions.length === 0
+								? "Add your first subscription to start tracking renewals and spend."
+								: "Try clearing filters or add a new subscription."}
+						</Text>
+
+						<View className="mt-6 w-full">
+							<Pressable
+								onPress={() => router.push("/add-subscription")}
+								hitSlop={10}
+								className="rounded-2xl bg-blue-600 px-4 py-4"
+								style={({ pressed }) => ({
+									opacity: pressed ? 0.9 : 1,
+								})}
+							>
+								<Text className="text-center text-base font-poppins-bold text-white">
+									Add subscription
+								</Text>
+							</Pressable>
+
+							{status || selectedCategory !== "All" ? (
+								<Pressable
+									onPress={() => {
+										setSelectedCategory("All");
+										if (status) {
+											router.replace(
+												"/(drawer)/(tabs)/subscriptions",
+											);
+										}
+									}}
+									hitSlop={10}
+									className="mt-3 rounded-2xl border border-border bg-white px-4 py-4"
+									style={({ pressed }) => ({
+										opacity: pressed ? 0.9 : 1,
+									})}
+								>
+									<Text className="text-center text-base font-poppins-semibold text-foreground">
+										Clear filters
+									</Text>
+								</Pressable>
+							) : null}
+						</View>
 					</View>
 				) : (
 					filtered.map((s) => (

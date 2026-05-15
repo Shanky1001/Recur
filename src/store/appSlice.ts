@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
-import { seed, type DummyData, type Notification } from "@/src/data/dummy";
+import type { Notification } from "@/src/data/dummy";
 import { appService } from "@/src/services/appService";
 import { parseIsoLike } from "@/src/utils/helper";
 
@@ -9,6 +9,7 @@ export type PreferencesState = {
 	currency: string;
 	defaultReminderDaysBefore: number;
 	defaultReminderEnabled: boolean;
+	hasOnboarded: boolean;
 };
 
 type User = {
@@ -16,7 +17,26 @@ type User = {
 	avatarUri: string;
 };
 
-type Dashboard = DummyData["dashboard"];
+type Dashboard = {
+	currencySymbol: string;
+	totalMonthlySpend: number;
+	activeSubscriptions: number;
+	pendingThisWeek: number;
+};
+
+function currencyToSymbol(currency: string): string {
+	switch (currency) {
+		case "USD":
+			return "$";
+		case "EUR":
+			return "€";
+		case "GBP":
+			return "£";
+		case "INR":
+		default:
+			return "₹";
+	}
+}
 
 export type AppState = {
 	user: User;
@@ -81,6 +101,22 @@ export const updatePreferences = createAsyncThunk(
 			...partial,
 		};
 		await appService.updatePreferences(next);
+		return next;
+	},
+);
+
+export const updateUserProfile = createAsyncThunk(
+	"user/updateProfile",
+	async (
+		partial: Partial<{ name: string; avatarUri: string }>,
+		{ getState },
+	) => {
+		const state = getState() as { app: AppState };
+		const next = {
+			name: partial.name ?? state.app.user.name,
+			avatarUri: partial.avatarUri ?? state.app.user.avatarUri,
+		};
+		await appService.updateUserProfile(next);
 		return next;
 	},
 );
@@ -170,18 +206,22 @@ export const snoozeNotification = createAsyncThunk(
 
 const initialState: AppState = {
 	user: {
-		name: seed.user.name,
-		avatarUri: seed.user.avatarUri,
+		name: "",
+		avatarUri: "",
 	},
-	dashboard: seed.dashboard,
-	subscriptions: seed.subscriptions,
-	notifications: seed.notifications,
+	dashboard: {
+		currencySymbol: "₹",
+		totalMonthlySpend: 0,
+		activeSubscriptions: 0,
+		pendingThisWeek: 0,
+	},
+	subscriptions: [],
+	notifications: [],
 	preferences: {
-		currency: seed.preferences?.currency ?? "INR",
-		defaultReminderDaysBefore:
-			seed.preferences?.defaultReminderDaysBefore ?? 3,
-		defaultReminderEnabled:
-			seed.preferences?.defaultReminderEnabled ?? true,
+		currency: "INR",
+		defaultReminderDaysBefore: 3,
+		defaultReminderEnabled: true,
+		hasOnboarded: false,
 	},
 	hydrated: false,
 };
@@ -193,6 +233,10 @@ const appSlice = createSlice({
 	extraReducers: (builder) => {
 		builder
 			.addCase(hydrateApp.fulfilled, (state, action) => {
+				state.user = {
+					name: action.payload.user.name,
+					avatarUri: action.payload.user.avatarUri,
+				};
 				state.subscriptions = action.payload.subscriptions;
 				state.notifications = action.payload.notifications;
 				state.preferences = {
@@ -201,7 +245,12 @@ const appSlice = createSlice({
 						action.payload.preferences.defaultReminderDaysBefore,
 					defaultReminderEnabled:
 						action.payload.preferences.defaultReminderEnabled,
+					hasOnboarded:
+						action.payload.preferences.hasOnboarded ?? false,
 				};
+				state.dashboard.currencySymbol = currencyToSymbol(
+					state.preferences.currency,
+				);
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,
@@ -209,6 +258,10 @@ const appSlice = createSlice({
 				state.hydrated = true;
 			})
 			.addCase(resetLocalData.fulfilled, (state, action) => {
+				state.user = {
+					name: action.payload.user.name,
+					avatarUri: action.payload.user.avatarUri,
+				};
 				state.subscriptions = action.payload.subscriptions;
 				state.notifications = action.payload.notifications;
 				state.preferences = {
@@ -217,7 +270,12 @@ const appSlice = createSlice({
 						action.payload.preferences.defaultReminderDaysBefore,
 					defaultReminderEnabled:
 						action.payload.preferences.defaultReminderEnabled,
+					hasOnboarded:
+						action.payload.preferences.hasOnboarded ?? false,
 				};
+				state.dashboard.currencySymbol = currencyToSymbol(
+					state.preferences.currency,
+				);
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,
@@ -226,6 +284,12 @@ const appSlice = createSlice({
 			})
 			.addCase(updatePreferences.fulfilled, (state, action) => {
 				state.preferences = action.payload;
+				state.dashboard.currencySymbol = currencyToSymbol(
+					state.preferences.currency,
+				);
+			})
+			.addCase(updateUserProfile.fulfilled, (state, action) => {
+				state.user = action.payload;
 			})
 			.addCase(addSubscription.fulfilled, (state, action) => {
 				state.subscriptions = [action.payload, ...state.subscriptions];

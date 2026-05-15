@@ -94,12 +94,13 @@ export default function AddSubscriptionScreen() {
 	}, [serviceConfig]);
 
 	const saveSubscription = async () => {
+		if (!cost.trim()) return;
 		const parsedCost = Number(cost);
 		if (
 			!service ||
 			!plan ||
 			!Number.isFinite(parsedCost) ||
-			parsedCost <= 0
+			parsedCost < 0
 		) {
 			return;
 		}

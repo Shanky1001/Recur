@@ -85,6 +85,7 @@ export default function AppDrawerContent(props: DrawerContentComponentProps) {
 						<Pressable
 							onPress={() => {
 								props.navigation.closeDrawer();
+								router.push("/edit-profile");
 							}}
 							hitSlop={10}
 						>

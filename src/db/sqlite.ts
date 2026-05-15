@@ -3,7 +3,24 @@ import { Platform } from "react-native";
 
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import type { Notification } from "@/src/data/dummy";
-import type { NotificationJob, Preferences } from "@/src/repository/models";
+import type {
+	NotificationJob,
+	Preferences,
+	UserProfile,
+} from "@/src/repository/models";
+
+async function ensurePreferencesColumns(d: AsyncDb): Promise<void> {
+	// Lightweight migration support.
+	const cols = await d.getAllAsync<{ name: string }>(
+		"PRAGMA table_info(preferences)",
+	);
+	const names = new Set(cols.map((c) => String((c as any).name)));
+	if (!names.has("hasOnboarded")) {
+		await d.execAsync(
+			"ALTER TABLE preferences ADD COLUMN hasOnboarded INTEGER NOT NULL DEFAULT 0;",
+		);
+	}
+}
 
 // We keep timestamps as UTC ISO strings only.
 export function nowIsoUtc(): string {
@@ -94,9 +111,19 @@ export async function initSqlite(): Promise<void> {
 				currency TEXT NOT NULL,
 				defaultReminderDaysBefore INTEGER NOT NULL,
 				defaultReminderEnabled INTEGER NOT NULL,
+				hasOnboarded INTEGER NOT NULL DEFAULT 0,
+				updatedAt TEXT NOT NULL
+			);
+
+			CREATE TABLE IF NOT EXISTS user_profile (
+				id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
+				name TEXT NOT NULL,
+				avatarUri TEXT NOT NULL,
 				updatedAt TEXT NOT NULL
 			);
 		`);
+
+		await ensurePreferencesColumns(d);
 	})();
 
 	return initPromise;
@@ -280,48 +307,7 @@ export async function markAllNotificationsRead(): Promise<void> {
 	await d.runAsync("UPDATE notifications SET read=1");
 }
 
-export async function seedIfEmpty(
-	seedSubscriptions: Subscription[],
-	seedNotifications: Notification[],
-): Promise<void> {
-	await initSqlite();
-	const d = db;
-	if (!d) return;
-
-	const subCount = await d.getAllAsync<{ c: number }>(
-		"SELECT COUNT(*) as c FROM subscriptions",
-	);
-	const notifCount = await d.getAllAsync<{ c: number }>(
-		"SELECT COUNT(*) as c FROM notifications",
-	);
-	const prefsCount = await d.getAllAsync<{ c: number }>(
-		"SELECT COUNT(*) as c FROM preferences",
-	);
-
-	if ((subCount[0]?.c ?? 0) === 0) {
-		for (const s of seedSubscriptions) {
-			await upsertSubscription(s);
-		}
-	}
-	if ((notifCount[0]?.c ?? 0) === 0) {
-		for (const n of seedNotifications) {
-			await upsertNotification(n);
-		}
-	}
-	if ((prefsCount[0]?.c ?? 0) === 0) {
-		await upsertPreferences({
-			currency: "INR",
-			defaultReminderDaysBefore: 3,
-			defaultReminderEnabled: true,
-			updatedAt: nowIsoUtc(),
-		});
-	}
-}
-
-export async function resetLocalData(
-	seedSubscriptions: Subscription[],
-	seedNotifications: Notification[],
-): Promise<void> {
+export async function resetLocalData(): Promise<void> {
 	await initSqlite();
 	const d = db;
 	if (!d) return;
@@ -330,13 +316,7 @@ export async function resetLocalData(
 	await d.runAsync("DELETE FROM notifications");
 	await d.runAsync("DELETE FROM notification_jobs");
 	await d.runAsync("DELETE FROM preferences");
-
-	for (const s of seedSubscriptions) {
-		await upsertSubscription(s);
-	}
-	for (const n of seedNotifications) {
-		await upsertNotification(n);
-	}
+	await d.runAsync("DELETE FROM user_profile");
 }
 
 export async function loadPreferences(): Promise<Preferences | null> {
@@ -352,6 +332,7 @@ export async function loadPreferences(): Promise<Preferences | null> {
 		currency: String(r.currency),
 		defaultReminderDaysBefore: Number(r.defaultReminderDaysBefore),
 		defaultReminderEnabled: Boolean(r.defaultReminderEnabled),
+		hasOnboarded: Boolean(r.hasOnboarded),
 		updatedAt: String(r.updatedAt),
 	};
 }
@@ -362,18 +343,20 @@ export async function upsertPreferences(p: Preferences): Promise<void> {
 	if (!d) return;
 	const updatedAt = p.updatedAt ?? nowIsoUtc();
 	await d.runAsync(
-		`INSERT INTO preferences (id, currency, defaultReminderDaysBefore, defaultReminderEnabled, updatedAt)
-		VALUES (1, ?, ?, ?, ?)
+		`INSERT INTO preferences (id, currency, defaultReminderDaysBefore, defaultReminderEnabled, hasOnboarded, updatedAt)
+		VALUES (1, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			currency=excluded.currency,
 			defaultReminderDaysBefore=excluded.defaultReminderDaysBefore,
 			defaultReminderEnabled=excluded.defaultReminderEnabled,
+			hasOnboarded=excluded.hasOnboarded,
 			updatedAt=excluded.updatedAt
 		`,
 		[
 			p.currency,
 			Math.round(p.defaultReminderDaysBefore),
 			p.defaultReminderEnabled ? 1 : 0,
+			p.hasOnboarded ? 1 : 0,
 			updatedAt,
 		],
 	);
@@ -384,6 +367,46 @@ export async function clearPreferences(): Promise<void> {
 	const d = db;
 	if (!d) return;
 	await d.runAsync("DELETE FROM preferences");
+}
+
+export async function loadUserProfile(): Promise<UserProfile | null> {
+	await initSqlite();
+	const d = db;
+	if (!d) return null;
+	const rows = await d.getAllAsync<any>(
+		"SELECT * FROM user_profile WHERE id=1 LIMIT 1",
+	);
+	const r = rows[0];
+	if (!r) return null;
+	return {
+		name: String(r.name),
+		avatarUri: String(r.avatarUri),
+		updatedAt: String(r.updatedAt),
+	};
+}
+
+export async function upsertUserProfile(profile: UserProfile): Promise<void> {
+	await initSqlite();
+	const d = db;
+	if (!d) return;
+	const updatedAt = profile.updatedAt ?? nowIsoUtc();
+	await d.runAsync(
+		`INSERT INTO user_profile (id, name, avatarUri, updatedAt)
+		VALUES (1, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET
+			name=excluded.name,
+			avatarUri=excluded.avatarUri,
+			updatedAt=excluded.updatedAt
+		`,
+		[profile.name, profile.avatarUri, updatedAt],
+	);
+}
+
+export async function clearUserProfile(): Promise<void> {
+	await initSqlite();
+	const d = db;
+	if (!d) return;
+	await d.runAsync("DELETE FROM user_profile");
 }
 
 export async function loadNotificationJobs(): Promise<NotificationJob[]> {
