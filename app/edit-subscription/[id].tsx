@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomSheetPicker, {
 	type PickerItem,
 } from "@/src/components/forms/BottomSheetPicker";
+import DateField from "@/src/components/forms/DateField";
 import SelectField from "@/src/components/forms/SelectField";
 import Card from "@/src/components/ui/Card";
 import {
@@ -44,6 +45,12 @@ export default function EditSubscriptionScreen() {
 	const [planName, setPlanName] = useState(subscription?.planName ?? "");
 	const [billingCycle, setBillingCycle] = useState<BillingCycle>(
 		(subscription?.billingCycle as BillingCycle) ?? "Monthly",
+	);
+	const [startDate, setStartDate] = useState(
+		subscription?.startDate ??
+			(subscription?.createdAt
+				? String(subscription.createdAt).slice(0, 10)
+				: new Date().toISOString().slice(0, 10)),
 	);
 	const [cost, setCost] = useState(
 		String(
@@ -104,6 +111,7 @@ export default function EditSubscriptionScreen() {
 			Alert.alert("Invalid amount", "Please enter a valid amount.");
 			return;
 		}
+		if (!startDate.trim()) return;
 
 		const parsed = Number(cost);
 		if (!Number.isFinite(parsed) || parsed < 0) {
@@ -118,6 +126,7 @@ export default function EditSubscriptionScreen() {
 				...subscription,
 				planName: planName.trim(),
 				billingCycle,
+				startDate: startDate.trim(),
 				pricePerBillingCycle,
 				pricePerMonth: computePricePerMonth(
 					billingCycle,
@@ -205,6 +214,13 @@ export default function EditSubscriptionScreen() {
 									setBillingCycle(v as BillingCycle),
 							})
 						}
+					/>
+
+					<DateField
+						label="Start date"
+						subLabel="When the subscription started (or will start)"
+						value={startDate}
+						onChange={setStartDate}
 					/>
 
 					<View className="pb-4">

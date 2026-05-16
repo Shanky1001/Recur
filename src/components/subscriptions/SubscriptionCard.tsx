@@ -20,6 +20,7 @@ export type Subscription = {
 	paymentMethod?: string;
 	reminderEnabled?: boolean;
 	reminderDaysBefore?: number;
+	startDate?: string; // YYYY-MM-DD or ISO
 	nextPaymentDate: string;
 	logoUri?: string;
 	createdAt?: string;

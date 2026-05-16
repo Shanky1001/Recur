@@ -96,6 +96,7 @@ export default function OnboardingScreen() {
 	const [idx, setIdx] = useState(0);
 	const step = steps[idx]!;
 	const profileStepIndex = 4;
+	const successStepIndex = steps.length - 1;
 
 	const [name, setName] = useState(user.name ?? "");
 	const [avatarUri, setAvatarUri] = useState(user.avatarUri ?? "");
@@ -225,6 +226,7 @@ export default function OnboardingScreen() {
 			billingCycle: cycle,
 			pricePerBillingCycle,
 			pricePerMonth: monthlyPrice(cycle, pricePerBillingCycle),
+			startDate: new Date().toISOString().slice(0, 10),
 			nextPaymentDate: nextPaymentByCycle(cycle),
 			logoUri: serviceConfig.logoUri,
 		});
@@ -563,11 +565,19 @@ export default function OnboardingScreen() {
 								})}
 							</View>
 
-							<View className="mt-6">
-								<PrimaryButton
-									label="Continue"
-									onPress={goNext}
-								/>
+							<View className="mt-6 flex-row gap-3">
+								<View className="flex-1">
+									<SecondaryButton
+										label="Skip"
+										onPress={() => setIdx(successStepIndex)}
+									/>
+								</View>
+								<View className="flex-1">
+									<PrimaryButton
+										label="Continue"
+										onPress={goNext}
+									/>
+								</View>
 							</View>
 						</View>
 					) : null}
@@ -603,19 +613,11 @@ export default function OnboardingScreen() {
 								</View>
 							</Card>
 
-							<View className="mt-6 flex-row gap-3">
-								<View className="flex-1">
-									<SecondaryButton
-										label="Skip"
-										onPress={goNext}
-									/>
-								</View>
-								<View className="flex-1">
-									<PrimaryButton
-										label="Add"
-										onPress={addFirstSubscription}
-									/>
-								</View>
+							<View className="mt-6">
+								<PrimaryButton
+									label="Add"
+									onPress={addFirstSubscription}
+								/>
 							</View>
 						</View>
 					) : null}

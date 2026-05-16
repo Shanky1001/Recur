@@ -114,10 +114,12 @@ function buildDeductions(
 	const amountNumber =
 		subscription.pricePerBillingCycle ?? subscription.pricePerMonth;
 	const amount = formatCurrency(amountNumber, subscription.currencySymbol);
-	const createdAt = subscription.createdAt
-		? parseIsoLike(subscription.createdAt)
-		: null;
-	if (!createdAt) return [];
+	const startedAt = subscription.startDate
+		? parseIsoLike(subscription.startDate)
+		: subscription.createdAt
+			? parseIsoLike(subscription.createdAt)
+			: null;
+	if (!startedAt) return [];
 
 	const cycle = subscription.billingCycle ?? "Monthly";
 	const effectiveNextIso =
@@ -126,7 +128,7 @@ function buildDeductions(
 	if (!next) return [];
 
 	// First possible deduction happens after 1 full cycle since createdAt.
-	const firstDeduction = addBillingCycle(createdAt, cycle);
+	const firstDeduction = addBillingCycle(startedAt, cycle);
 	const now = new Date();
 
 	// Start from the last payment date (one cycle before next).
@@ -408,9 +410,11 @@ export default function SubscriptionDetailsScreen() {
 					<Row
 						label="Active Since"
 						value={
-							subscription.createdAt
-								? formatDateLong(subscription.createdAt)
-								: "—"
+							subscription.startDate
+								? formatDateLong(subscription.startDate)
+								: subscription.createdAt
+									? formatDateLong(subscription.createdAt)
+									: "—"
 						}
 					/>
 				</Section>

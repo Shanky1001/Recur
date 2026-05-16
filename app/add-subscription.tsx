@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomSheetPicker, {
 	type PickerItem,
 } from "@/src/components/forms/BottomSheetPicker";
+import DateField from "@/src/components/forms/DateField";
 import SelectField from "@/src/components/forms/SelectField";
 import Card from "@/src/components/ui/Card";
 import {
@@ -43,6 +44,16 @@ function addDays(days: number): string {
 	return date.toISOString().slice(0, 10);
 }
 
+function addBillingCycle(date: Date, cycle: BillingCycle): Date {
+	const d = new Date(date);
+	if (cycle === "Yearly") {
+		d.setFullYear(d.getFullYear() + 1);
+		return d;
+	}
+	d.setMonth(d.getMonth() + 1);
+	return d;
+}
+
 export default function AddSubscriptionScreen() {
 	const insets = useSafeAreaInsets();
 	const dashboard = useDashboard();
@@ -60,6 +71,9 @@ export default function AddSubscriptionScreen() {
 	const [plan, setPlan] = useState<string>(serviceConfig.plans[0]!);
 	const [billingCycle, setBillingCycle] = useState<BillingCycle>(
 		serviceConfig.defaultCycle,
+	);
+	const [startDate, setStartDate] = useState(
+		new Date().toISOString().slice(0, 10),
 	);
 	const [cost, setCost] = useState(String(serviceConfig.defaultCost));
 	const [paymentMethod, setPaymentMethod] = useState<
@@ -94,6 +108,7 @@ export default function AddSubscriptionScreen() {
 	}, [serviceConfig]);
 
 	const saveSubscription = async () => {
+		if (!startDate.trim()) return;
 		if (!cost.trim()) return;
 		const parsedCost = Number(cost);
 		if (
@@ -108,8 +123,12 @@ export default function AddSubscriptionScreen() {
 		const idBase = service.toLowerCase().replace(/\s+/g, "-");
 		const id = `${idBase}-${Date.now().toString(36)}`;
 
-		const nextPaymentDate =
-			billingCycle === "Yearly" ? addDays(365) : addDays(30);
+		const nextPaymentDate = addBillingCycle(
+			new Date(startDate),
+			billingCycle,
+		)
+			.toISOString()
+			.slice(0, 10);
 		const pricePerBillingCycle = Math.round(parsedCost);
 		const pricePerMonth =
 			billingCycle === "Yearly"
@@ -129,6 +148,7 @@ export default function AddSubscriptionScreen() {
 			paymentMethod,
 			reminderEnabled,
 			reminderDaysBefore: preferences.defaultReminderDaysBefore ?? 3,
+			startDate: startDate.trim(),
 			nextPaymentDate,
 			logoUri: serviceConfig.logoUri,
 		});
@@ -305,6 +325,13 @@ export default function AddSubscriptionScreen() {
 										setPaymentMethod(v as PaymentMethod),
 								})
 							}
+						/>
+
+						<DateField
+							label="Start date"
+							subLabel="When the subscription started (or will start)"
+							value={startDate}
+							onChange={setStartDate}
 						/>
 
 						<View className="flex-row items-center justify-between rounded-2xl border border-border bg-white px-4 py-4">

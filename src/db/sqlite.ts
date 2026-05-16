@@ -9,19 +9,6 @@ import type {
 	UserProfile,
 } from "@/src/repository/models";
 
-async function ensurePreferencesColumns(d: AsyncDb): Promise<void> {
-	// Lightweight migration support.
-	const cols = await d.getAllAsync<{ name: string }>(
-		"PRAGMA table_info(preferences)",
-	);
-	const names = new Set(cols.map((c) => String((c as any).name)));
-	if (!names.has("hasOnboarded")) {
-		await d.execAsync(
-			"ALTER TABLE preferences ADD COLUMN hasOnboarded INTEGER NOT NULL DEFAULT 0;",
-		);
-	}
-}
-
 // We keep timestamps as UTC ISO strings only.
 export function nowIsoUtc(): string {
 	return new Date().toISOString();
@@ -82,6 +69,7 @@ export async function initSqlite(): Promise<void> {
 				paymentMethod TEXT,
 				reminderEnabled INTEGER,
 				reminderDaysBefore INTEGER,
+				startDate TEXT,
 				nextPaymentDate TEXT NOT NULL,
 				logoUri TEXT,
 				createdAt TEXT NOT NULL
@@ -122,8 +110,6 @@ export async function initSqlite(): Promise<void> {
 				updatedAt TEXT NOT NULL
 			);
 		`);
-
-		await ensurePreferencesColumns(d);
 	})();
 
 	return initPromise;
@@ -157,6 +143,7 @@ export async function loadSubscriptions(): Promise<Subscription[]> {
 			r.reminderDaysBefore == null
 				? undefined
 				: Number(r.reminderDaysBefore),
+		startDate: r.startDate == null ? undefined : String(r.startDate),
 		nextPaymentDate: String(r.nextPaymentDate),
 		logoUri: r.logoUri ?? undefined,
 		createdAt: r.createdAt == null ? undefined : String(r.createdAt),
@@ -169,11 +156,15 @@ export async function upsertSubscription(sub: Subscription): Promise<void> {
 	if (!d) return;
 
 	const createdAt = sub.createdAt ?? nowIsoUtc();
+	const startDate =
+		sub.startDate ??
+		(sub.createdAt ? String(sub.createdAt).slice(0, 10) : undefined) ??
+		createdAt.slice(0, 10);
 	await d.runAsync(
 		`INSERT INTO subscriptions (
 			id, name, category, status, planName, pricePerMonth, currencySymbol,
 			billingCycle, pricePerBillingCycle, paymentMethod, reminderEnabled, reminderDaysBefore,
-			nextPaymentDate, logoUri, createdAt
+			startDate, nextPaymentDate, logoUri, createdAt
 		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			name=excluded.name,
@@ -187,6 +178,7 @@ export async function upsertSubscription(sub: Subscription): Promise<void> {
 			paymentMethod=excluded.paymentMethod,
 			reminderEnabled=excluded.reminderEnabled,
 			reminderDaysBefore=excluded.reminderDaysBefore,
+			startDate=excluded.startDate,
 			nextPaymentDate=excluded.nextPaymentDate,
 			logoUri=excluded.logoUri
 		`,
@@ -203,6 +195,7 @@ export async function upsertSubscription(sub: Subscription): Promise<void> {
 			sub.paymentMethod ?? null,
 			sub.reminderEnabled == null ? null : sub.reminderEnabled ? 1 : 0,
 			sub.reminderDaysBefore ?? null,
+			startDate ?? null,
 			sub.nextPaymentDate,
 			sub.logoUri ?? null,
 			createdAt,

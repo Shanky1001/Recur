@@ -33,7 +33,8 @@ export type ServiceConfig = {
 export const SERVICES = [
 	{
 		name: "Netflix",
-		logoUri: "https://cdn.simpleicons.org/netflix/E50914",
+		logoUri:
+			"https://res.cloudinary.com/donrxmkyd/image/upload/v1778911975/netflix_txm2jd.png",
 		plans: ["Mobile", "Basic", "Standard", "Premium"],
 		defaultCycle: "Monthly",
 		defaultCost: 649,
@@ -42,7 +43,8 @@ export const SERVICES = [
 	},
 	{
 		name: "YouTube",
-		logoUri: "https://cdn.simpleicons.org/youtube/FF0000",
+		logoUri:
+			"https://res.cloudinary.com/donrxmkyd/image/upload/v1778912098/youtube_ade9or.png",
 		plans: ["Individual", "Family", "Student"],
 		defaultCycle: "Monthly",
 		defaultCost: 149,
@@ -51,7 +53,8 @@ export const SERVICES = [
 	},
 	{
 		name: "Notion",
-		logoUri: "https://cdn.simpleicons.org/notion/000000",
+		logoUri:
+			"https://res.cloudinary.com/donrxmkyd/image/upload/v1778912439/notion_wgzdcr.png",
 		plans: ["Free", "Plus", "Business"],
 		defaultCycle: "Monthly",
 		defaultCost: 399,
@@ -60,7 +63,8 @@ export const SERVICES = [
 	},
 	{
 		name: "Spotify",
-		logoUri: "https://cdn.simpleicons.org/spotify/1DB954",
+		logoUri:
+			"https://res.cloudinary.com/donrxmkyd/image/upload/v1778912439/spotify_mgr7eb.png",
 		plans: ["Individual", "Duo", "Family", "Student"],
 		defaultCycle: "Monthly",
 		defaultCost: 119,
@@ -69,7 +73,8 @@ export const SERVICES = [
 	},
 	{
 		name: "Prime Video",
-		logoUri: "https://cdn.simpleicons.org/primevideo/1F2E5B",
+		logoUri:
+			"https://res.cloudinary.com/donrxmkyd/image/upload/v1778912439/primevideo_olngao.png",
 		plans: ["Monthly", "Yearly"],
 		defaultCycle: "Monthly",
 		defaultCost: 299,
@@ -78,8 +83,18 @@ export const SERVICES = [
 	},
 	{
 		name: "Disney+",
-		logoUri: "https://cdn.simpleicons.org/disneyplus/113CCF",
+		logoUri:
+			"https://res.cloudinary.com/donrxmkyd/image/upload/v1778912098/DisneyLogo_gtwqwd.png",
 		plans: ["Mobile", "Super", "Premium"],
+		defaultCycle: "Monthly",
+		defaultCost: 299,
+		defaultCategory: "Entertainment",
+		defaultStatus: "active",
+	},
+	{
+		name: "Others",
+		logoUri: "Others",
+		plans: ["Mobile", "others"],
 		defaultCycle: "Monthly",
 		defaultCost: 299,
 		defaultCategory: "Entertainment",

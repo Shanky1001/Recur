@@ -138,9 +138,17 @@ export function createAppService(
 		upsertSubscription: async (subscription: Subscription) => {
 			const prefs =
 				(await repository.loadPreferences()) ?? defaultPreferences();
+			const createdAt = subscription.createdAt ?? nowIsoUtc();
+			const startDate =
+				subscription.startDate ??
+				(subscription.createdAt
+					? String(subscription.createdAt).slice(0, 10)
+					: undefined) ??
+				createdAt.slice(0, 10);
 			const next: Subscription = {
 				...subscription,
-				createdAt: subscription.createdAt ?? nowIsoUtc(),
+				createdAt,
+				startDate,
 				reminderEnabled:
 					subscription.reminderEnabled ??
 					prefs.defaultReminderEnabled,
