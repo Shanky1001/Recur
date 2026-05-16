@@ -15,6 +15,8 @@ export default function OnboardingStepHeader({
 	onSkip: () => void;
 	showSkip: boolean;
 }) {
+	const progress = Math.max(0, Math.min(1, step / total));
+
 	return (
 		<View className="px-4 pt-2">
 			<View className="flex-row items-center justify-between">
@@ -22,17 +24,22 @@ export default function OnboardingStepHeader({
 					onPress={onBack}
 					disabled={!onBack}
 					hitSlop={10}
+					className="size-9 items-center justify-center rounded-full border border-slate-200 bg-white"
 					style={({ pressed }) => ({
-						opacity: !onBack ? 0 : pressed ? 0.7 : 1,
+						opacity: !onBack ? 0 : pressed ? 0.75 : 1,
 					})}
 				>
-					<Ionicons name="chevron-back" size={26} color="#0f172a" />
+					<Ionicons name="chevron-back" size={20} color="#0f172a" />
 				</Pressable>
-				<Text className="text-xs font-poppins-semibold text-foreground/50">
-					{step}/{total}
+				<Text className="text-xs font-poppins-semibold uppercase tracking-widest text-foreground/50">
+					Step {step} of {total}
 				</Text>
 				{showSkip ? (
-					<Pressable onPress={onSkip} hitSlop={10}>
+					<Pressable
+						onPress={onSkip}
+						hitSlop={10}
+						className="rounded-full border border-slate-200 bg-white px-3 py-1.5"
+					>
 						<Text className="text-sm font-poppins-semibold text-blue-600">
 							Skip
 						</Text>
@@ -40,6 +47,13 @@ export default function OnboardingStepHeader({
 				) : (
 					<View style={{ width: 36 }} />
 				)}
+			</View>
+
+			<View className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+				<View
+					className="h-2 rounded-full bg-blue-600"
+					style={{ width: `${progress * 100}%` }}
+				/>
 			</View>
 		</View>
 	);
