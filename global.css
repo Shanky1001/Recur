@@ -52,11 +52,11 @@
 	}
 
 	.tabs-pill {
-		@apply size-12 items-center justify-center rounded-full bg-transparent;
+		@apply size-12 items-center justify-center bg-transparent;
 	}
 
 	.tabs-active {
-		@apply bg-accent;
+		@apply bg-accent rounded-full;
 	}
 
 	.tabs-glyph {
