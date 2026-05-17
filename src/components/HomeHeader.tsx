@@ -21,13 +21,17 @@ export default function HomeHeader({
 }: HomeHeaderProps) {
 	return (
 		<View className="flex-row items-center justify-between px-5 pb-4 pt-2">
-			<View className="flex-row items-center">
+			<View className="mr-3 flex-1 flex-row items-center">
 				<Image
 					source={{ uri: avatarUri }}
 					className="size-12 rounded-full"
 					resizeMode="cover"
 				/>
-				<Text className="ml-4 text-2xl font-poppins-bold text-white">
+				<Text
+					className="ml-4 shrink text-2xl font-poppins-bold text-white"
+					numberOfLines={1}
+					ellipsizeMode="tail"
+				>
 					{userName}
 				</Text>
 			</View>

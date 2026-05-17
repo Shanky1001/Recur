@@ -77,7 +77,11 @@ export default function AppDrawerContent(props: DrawerContentComponentProps) {
 								className="size-14 rounded-full"
 								resizeMode="cover"
 							/>
-							<Text className="ml-4 text-2xl font-poppins-bold text-pink-300">
+							<Text
+								className="ml-4 text-2xl font-poppins-bold shrink text-pink-300"
+								numberOfLines={1}
+								ellipsizeMode="tail"
+							>
 								{user.name}
 							</Text>
 						</View>

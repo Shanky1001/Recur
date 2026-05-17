@@ -2,7 +2,7 @@ import BottomSheet, {
 	BottomSheetBackdrop,
 	BottomSheetFlatList,
 } from "@gorhom/bottom-sheet";
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useCallback } from "react";
 import { Pressable, Text, View } from "react-native";
 
 export type PickerItem<T extends string> = {
@@ -28,14 +28,6 @@ export default function BottomSheetPicker<T extends string>({
 	onSelect,
 	onClose,
 }: BottomSheetPickerProps<T>) {
-	const sheetRef = useRef<BottomSheet>(null);
-	const snapPoints = useMemo(() => ["60%"], []);
-
-	useEffect(() => {
-		if (open) sheetRef.current?.snapToIndex(0);
-		else sheetRef.current?.close();
-	}, [open]);
-
 	const renderBackdrop = useCallback(
 		(props: any) => (
 			<BottomSheetBackdrop
@@ -48,11 +40,12 @@ export default function BottomSheetPicker<T extends string>({
 		[onClose],
 	);
 
+	if (!open) return null;
 	return (
 		<BottomSheet
-			ref={sheetRef}
-			index={-1}
-			snapPoints={snapPoints}
+			index={0}
+			snapPoints={["60%"]}
+			enableDynamicSizing={false}
 			enablePanDownToClose
 			backdropComponent={renderBackdrop}
 			onClose={onClose}
@@ -105,7 +98,6 @@ export default function BottomSheetPicker<T extends string>({
 						</Pressable>
 					);
 				}}
-				contentContainerStyle={{ paddingBottom: 24 }}
 				showsVerticalScrollIndicator={false}
 			/>
 		</BottomSheet>

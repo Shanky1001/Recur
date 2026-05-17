@@ -174,7 +174,7 @@ export default function OnboardingStepContent({
 								<TextInput
 									value={name}
 									onChangeText={onChangeName}
-									placeholder="e.g. Shashank"
+									placeholder="e.g. John Doe"
 									className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-poppins-semibold"
 									placeholderTextColor="#94a3b8"
 								/>
