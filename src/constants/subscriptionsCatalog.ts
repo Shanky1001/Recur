@@ -49,7 +49,7 @@ export const SERVICES = [
 		defaultCycle: "Monthly",
 		defaultCost: 149,
 		defaultCategory: "Entertainment",
-		defaultStatus: "trial",
+		defaultStatus: "active",
 	},
 	{
 		name: "Notion",

@@ -165,7 +165,7 @@ export async function upsertSubscription(sub: Subscription): Promise<void> {
 			id, name, category, status, planName, pricePerMonth, currencySymbol,
 			billingCycle, pricePerBillingCycle, paymentMethod, reminderEnabled, reminderDaysBefore,
 			startDate, nextPaymentDate, logoUri, createdAt
-		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			name=excluded.name,
 			category=excluded.category,

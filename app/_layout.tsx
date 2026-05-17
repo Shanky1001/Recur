@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 
 import { AppStateProvider } from "@/src/state/appState";
+import { StatusBar } from "react-native";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -28,6 +29,7 @@ export default function RootLayout() {
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
 			<AppStateProvider>
+				<StatusBar barStyle={"dark-content"} />
 				<Stack screenOptions={{ headerShown: false }} />
 			</AppStateProvider>
 		</GestureHandlerRootView>
