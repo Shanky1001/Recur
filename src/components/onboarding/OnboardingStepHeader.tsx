@@ -20,17 +20,25 @@ export default function OnboardingStepHeader({
 	return (
 		<View className="px-4 pt-2">
 			<View className="flex-row items-center justify-between">
-				<Pressable
-					onPress={onBack}
-					disabled={!onBack}
-					hitSlop={10}
-					className="size-9 items-center justify-center rounded-full border border-slate-200 bg-white"
-					style={({ pressed }) => ({
-						opacity: !onBack ? 0 : pressed ? 0.75 : 1,
-					})}
-				>
-					<Ionicons name="chevron-back" size={20} color="#0f172a" />
-				</Pressable>
+				{step !== 1 ? (
+					<Pressable
+						onPress={onBack}
+						disabled={!onBack}
+						hitSlop={10}
+						className="size-9 items-center justify-center rounded-full border border-slate-200 bg-white"
+						style={({ pressed }) => ({
+							opacity: !onBack ? 0 : pressed ? 0.75 : 1,
+						})}
+					>
+						<Ionicons
+							name="chevron-back"
+							size={20}
+							color="#0f172a"
+						/>
+					</Pressable>
+				) : (
+					<View style={{ width: 36 }} />
+				)}
 				<Text className="text-xs font-poppins-semibold uppercase tracking-widest text-foreground/50">
 					Step {step} of {total}
 				</Text>

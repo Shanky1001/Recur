@@ -3,6 +3,9 @@ import React from "react";
 import { Text, View } from "react-native";
 
 import { PrimaryButton } from "@/src/components/onboarding/OnboardingButtons";
+import OnboardingHighlights, {
+	type OnboardingHighlightItem,
+} from "@/src/components/onboarding/OnboardingHighlights";
 import Card from "@/src/components/ui/Card";
 
 export default function OnboardingInfoCard({
@@ -16,10 +19,7 @@ export default function OnboardingInfoCard({
 	title: string;
 	description: string;
 	icon?: React.ComponentProps<typeof Ionicons>["name"];
-	highlights?: {
-		label: string;
-		icon: React.ComponentProps<typeof Ionicons>["name"];
-	}[];
+	highlights?: OnboardingHighlightItem[];
 	actionLabel?: string;
 	onAction?: () => void;
 }) {
@@ -47,30 +47,7 @@ export default function OnboardingInfoCard({
 			</Text>
 
 			{highlights?.length ? (
-				<View className="mt-5 rounded-2xl bg-slate-100/70 px-4 py-4">
-					<Text className="text-xs font-poppins-bold uppercase tracking-widest text-foreground/50">
-						What you get
-					</Text>
-					<View className="mt-3 gap-2.5">
-						{highlights.map((item) => (
-							<View
-								key={item.label}
-								className="flex-row items-start rounded-xl bg-white/80 px-3 py-2.5"
-							>
-								<View className="size-6 items-center justify-center rounded-lg bg-blue-50">
-									<Ionicons
-										name={item.icon}
-										size={14}
-										color="#2563EB"
-									/>
-								</View>
-								<Text className="ml-2 flex-1 text-sm leading-6 font-poppins-medium text-foreground/70">
-									{item.label}
-								</Text>
-							</View>
-						))}
-					</View>
-				</View>
+				<OnboardingHighlights items={highlights} title="What you get" />
 			) : null}
 
 			{showAction ? (

@@ -45,10 +45,14 @@ export default function HomeHeader({
 					}
 				/>
 
-				<IconButton
-					onPress={onPressMenu}
-					icon={<Ionicons name="menu" size={22} color="#081126" />}
-				/>
+				{__DEV__ && (
+					<IconButton
+						onPress={onPressMenu}
+						icon={
+							<Ionicons name="menu" size={22} color="#081126" />
+						}
+					/>
+				)}
 			</View>
 		</View>
 	);

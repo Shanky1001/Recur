@@ -12,6 +12,7 @@ import {
 export type SelectOption<T extends string> = {
 	key: T;
 	label: string;
+	name?: string;
 };
 
 export default function PopoverSelect<T extends string>({
@@ -60,7 +61,7 @@ export default function PopoverSelect<T extends string>({
 						className="text-base font-poppins-semibold"
 						style={{ color: accentColor }}
 					>
-						{selected?.label ?? value}
+						{selected?.name ?? selected?.label ?? value}
 					</Text>
 					<Ionicons
 						name="chevron-down"
@@ -138,7 +139,7 @@ export default function PopoverSelect<T extends string>({
 													})}
 												>
 													<Text className="text-sm font-poppins-semibold text-foreground">
-														{opt.label}
+														{opt.name ?? opt.label}
 													</Text>
 													{active ? (
 														<Ionicons

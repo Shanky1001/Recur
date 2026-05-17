@@ -1,7 +1,7 @@
-import { StepKey } from "@/app/onboarding";
+import type { OnboardingHighlightItem } from "@/src/components/onboarding/OnboardingHighlights";
+import type { StepKey } from "@/src/components/onboarding/types";
 
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
-import Ionicons from "@expo/vector-icons/Ionicons";
 
 export type NotificationType = "billing" | "trial" | "insight" | "info";
 
@@ -151,11 +151,17 @@ export const seed: DummyData = {
 	},
 };
 
-export type HighlightItem = {
-	label: string;
-	icon: React.ComponentProps<typeof Ionicons>["name"];
-};
+export type HighlightItem = OnboardingHighlightItem;
 
+export const OnboardingSteps = [
+	"welcome",
+	"profile",
+	"notifications",
+	"currency",
+	"quickAdd",
+	"firstSub",
+	"success",
+] as const;
 export const highlightContent: Record<StepKey, HighlightItem[]> = {
 	welcome: [
 		{
@@ -170,28 +176,14 @@ export const highlightContent: Record<StepKey, HighlightItem[]> = {
 			label: "See monthly and yearly spend instantly",
 			icon: "bar-chart-outline",
 		},
-	],
-	benefit1: [
-		{ label: "Custom reminder timing", icon: "time-outline" },
-		{ label: "Same-day renewal alert", icon: "alarm-outline" },
 		{
-			label: "Easy cancel before auto-charge",
-			icon: "close-circle-outline",
-		},
-	],
-	benefit2: [
-		{ label: "Never miss trial deadlines", icon: "hourglass-outline" },
-		{
-			label: "Avoid accidental conversions",
-			icon: "shield-checkmark-outline",
+			label: "Custom reminder timing",
+			icon: "time-outline",
 		},
 		{
-			label: "Stay aware of upcoming costs",
-			icon: "trending-up-outline",
+			label: "Never miss trial deadlines",
+			icon: "hourglass-outline",
 		},
-	],
-	benefit3: [
-		{ label: "Monthly spend visibility", icon: "stats-chart-outline" },
 		{
 			label: "Yearly projection at a glance",
 			icon: "pie-chart-outline",
@@ -262,3 +254,36 @@ export const highlightContent: Record<StepKey, HighlightItem[]> = {
 		{ label: "You can add more anytime", icon: "add-outline" },
 	],
 };
+
+export const featureChips = [
+	"Offline-first",
+	"Private by default",
+	"Smart reminders",
+] as const;
+export const WelcomeBenefitsList = [
+	{
+		icon: "notifications-outline" as const,
+		label: "Renewal reminders",
+		description:
+			"Get notified before renewal so you can cancel or downgrade in time.",
+	},
+	{
+		icon: "flask-outline" as const,
+		label: "Trial tracking",
+		description:
+			"Avoid trials silently converting into paid subscriptions.",
+	},
+	{
+		icon: "wallet-outline" as const,
+		label: "Spending awareness",
+		description:
+			"See monthly/yearly projections and spot easy savings quickly.",
+	},
+] as const;
+
+export const CurrencyOptions = [
+	{ key: "INR", label: "₹", name: "INR" },
+	{ key: "USD", label: "$", name: "USD" },
+	{ key: "EUR", label: "€", name: "EUR" },
+	{ key: "GBP", label: "£", name: "GBP" },
+];

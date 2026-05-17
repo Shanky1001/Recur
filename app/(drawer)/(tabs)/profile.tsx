@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import PopoverSelect from "@/src/components/analytics/PopoverSelect";
 import Card from "@/src/components/ui/Card";
+import { CurrencyOptions } from "@/src/data/dummy";
 import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
 import {
 	useAppActions,
@@ -329,12 +330,7 @@ export default function ProfileScreen() {
 						right={
 							<PopoverSelect
 								value={currency}
-								options={[
-									{ key: "INR", label: "INR" },
-									{ key: "USD", label: "USD" },
-									{ key: "EUR", label: "EUR" },
-									{ key: "GBP", label: "GBP" },
-								]}
+								options={CurrencyOptions}
 								onChange={(next) => {
 									updatePreferences({ currency: next });
 								}}

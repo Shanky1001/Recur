@@ -1,3 +1,5 @@
+import type { BillingCycle } from "@/src/constants/subscriptionsCatalog";
+
 export function pad2(value: number): string {
 	return String(value).padStart(2, "0");
 }
@@ -42,4 +44,43 @@ export function parseIsoLike(isoLike: string): Date | null {
 	}
 
 	return null;
+}
+
+export function currencyToSymbol(currency: string): string {
+	switch (currency) {
+		case "USD":
+			return "$";
+		case "EUR":
+			return "€";
+		case "GBP":
+			return "£";
+		case "INR":
+		default:
+			return "₹";
+	}
+}
+
+export function addDays(days: number): string {
+	const date = new Date();
+	date.setDate(date.getDate() + days);
+	return date.toISOString().slice(0, 10);
+}
+
+export function nextPaymentByCycle(cycle: BillingCycle): string {
+	if (cycle === "Yearly") return addDays(365);
+	return addDays(30);
+}
+
+export function monthlyPrice(
+	cycle: BillingCycle,
+	pricePerCycle: number,
+): number {
+	if (cycle === "Yearly") return Math.round(pricePerCycle / 12);
+	return Math.round(pricePerCycle);
+}
+
+export function getPresetAvatarUrls(): string[] {
+	return [8, 12, 15, 18, 24, 32].map(
+		(n) => `https://i.pravatar.cc/150?img=${n}`,
+	);
 }
