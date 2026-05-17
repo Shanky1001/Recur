@@ -8,6 +8,7 @@ import type {
 } from "@/src/repository/appRepository";
 import type { Preferences, UserProfile } from "@/src/repository/models";
 import { sqliteAppRepository } from "@/src/repository/sqliteAppRepository";
+import { nextPaymentFromStartDate } from "@/src/utils/helper";
 
 export type AppService = {
 	hydrate: () => Promise<HydratedData>;
@@ -145,10 +146,19 @@ export function createAppService(
 					? String(subscription.createdAt).slice(0, 10)
 					: undefined) ??
 				createdAt.slice(0, 10);
+			const computedNextPaymentDate =
+				subscription.billingCycle && startDate
+					? nextPaymentFromStartDate(
+							startDate,
+							subscription.billingCycle,
+						)
+					: null;
 			const next: Subscription = {
 				...subscription,
 				createdAt,
 				startDate,
+				nextPaymentDate:
+					computedNextPaymentDate ?? subscription.nextPaymentDate,
 				reminderEnabled:
 					subscription.reminderEnabled ??
 					prefs.defaultReminderEnabled,

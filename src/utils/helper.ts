@@ -71,6 +71,36 @@ export function nextPaymentByCycle(cycle: BillingCycle): string {
 	return addDays(30);
 }
 
+function addCycle(date: Date, cycle: BillingCycle | "Weekly"): Date {
+	const d = new Date(date);
+	if (cycle === "Weekly") {
+		d.setDate(d.getDate() + 7);
+		return d;
+	}
+	if (cycle === "Yearly") {
+		d.setFullYear(d.getFullYear() + 1);
+		return d;
+	}
+	d.setMonth(d.getMonth() + 1);
+	return d;
+}
+
+export function nextPaymentFromStartDate(
+	startDate: string,
+	cycle: BillingCycle | "Weekly",
+	now: Date = new Date(),
+): string | null {
+	const start = parseIsoLike(startDate);
+	if (!start) return null;
+
+	let next = addCycle(start, cycle);
+	while (next.getTime() <= now.getTime()) {
+		next = addCycle(next, cycle);
+	}
+
+	return next.toISOString();
+}
+
 export function monthlyPrice(
 	cycle: BillingCycle,
 	pricePerCycle: number,

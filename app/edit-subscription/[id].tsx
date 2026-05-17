@@ -16,6 +16,7 @@ import BottomSheetPicker, {
 } from "@/src/components/forms/BottomSheetPicker";
 import DateField from "@/src/components/forms/DateField";
 import SelectField from "@/src/components/forms/SelectField";
+import type { SubscriptionStatus } from "@/src/components/subscriptions/SubscriptionCard";
 import Card from "@/src/components/ui/Card";
 import {
 	BILLING_CYCLES,
@@ -49,8 +50,8 @@ export default function EditSubscriptionScreen() {
 	const [startDate, setStartDate] = useState(
 		subscription?.startDate ??
 			(subscription?.createdAt
-				? String(subscription.createdAt).slice(0, 10)
-				: new Date().toISOString().slice(0, 10)),
+				? String(subscription.createdAt)
+				: new Date().toISOString()),
 	);
 	const [cost, setCost] = useState(
 		String(
@@ -62,6 +63,9 @@ export default function EditSubscriptionScreen() {
 	const [paymentMethod, setPaymentMethod] = useState<
 		PaymentMethod | undefined
 	>(subscription?.paymentMethod as any);
+	const [status, setStatus] = useState<SubscriptionStatus>(
+		subscription?.status ?? "active",
+	);
 
 	const [picker, setPicker] = useState<
 		| {
@@ -124,6 +128,7 @@ export default function EditSubscriptionScreen() {
 			const pricePerBillingCycle = Math.round(parsed);
 			await upsertSubscription({
 				...subscription,
+				status,
 				planName: planName.trim(),
 				billingCycle,
 				startDate: startDate.trim(),
@@ -217,11 +222,55 @@ export default function EditSubscriptionScreen() {
 					/>
 
 					<DateField
-						label="Start date"
+						label="Start date & time"
 						subLabel="When the subscription started (or will start)"
 						value={startDate}
 						onChange={setStartDate}
 					/>
+
+					<View className="pb-4">
+						<Text className="text-sm font-poppins-bold text-foreground">
+							Status
+						</Text>
+						<View className="mt-2 flex-row rounded-2xl border border-border bg-white p-1">
+							<Pressable
+								onPress={() => setStatus("active")}
+								className={
+									status === "active"
+										? "flex-1 rounded-xl bg-blue-600 px-4 py-3"
+										: "flex-1 rounded-xl px-4 py-3"
+								}
+							>
+								<Text
+									className={
+										status === "active"
+											? "text-center text-sm font-poppins-bold text-white"
+											: "text-center text-sm font-poppins-semibold text-foreground"
+									}
+								>
+									Active
+								</Text>
+							</Pressable>
+							<Pressable
+								onPress={() => setStatus("trial")}
+								className={
+									status === "trial"
+										? "flex-1 rounded-xl bg-blue-600 px-4 py-3"
+										: "flex-1 rounded-xl px-4 py-3"
+								}
+							>
+								<Text
+									className={
+										status === "trial"
+											? "text-center text-sm font-poppins-bold text-white"
+											: "text-center text-sm font-poppins-semibold text-foreground"
+									}
+								>
+									Trial
+								</Text>
+							</Pressable>
+						</View>
+					</View>
 
 					<View className="pb-4">
 						<Text className="text-sm font-poppins-bold text-foreground">

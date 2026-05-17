@@ -7,13 +7,19 @@ import { Modal, Platform, Pressable, Text, View } from "react-native";
 
 import { parseIsoLike } from "@/src/utils/helper";
 
-function toIsoDate(d: Date): string {
-	return d.toISOString().slice(0, 10);
+function toIsoDateTime(d: Date): string {
+	return d.toISOString();
 }
 
-function fromIsoDate(value?: string): Date {
+function fromIsoDateTime(value?: string): Date {
 	const parsed = value ? parseIsoLike(value) : null;
 	return parsed ?? new Date();
+}
+
+function toDisplay(value: string): string {
+	const parsed = parseIsoLike(value);
+	if (!parsed) return value;
+	return parsed.toLocaleString();
 }
 
 export default function DateField({
@@ -23,24 +29,55 @@ export default function DateField({
 	subLabel,
 }: {
 	label: string;
-	value?: string; // YYYY-MM-DD (preferred)
-	onChange: (nextIsoDate: string) => void;
+	value?: string; // ISO date-time preferred
+	onChange: (nextIsoDateTime: string) => void;
 	subLabel?: string;
 }) {
 	const [open, setOpen] = useState(false);
-	const current = useMemo(() => fromIsoDate(value), [value]);
+	const [androidMode, setAndroidMode] = useState<"date" | "time">("date");
+	const [androidTempDate, setAndroidTempDate] = useState<Date | null>(null);
+	const current = useMemo(() => fromIsoDateTime(value), [value]);
 
-	const close = () => setOpen(false);
-	const openPicker = () => setOpen(true);
+	const close = () => {
+		setOpen(false);
+		setAndroidMode("date");
+		setAndroidTempDate(null);
+	};
+	const openPicker = () => {
+		if (Platform.OS === "android") {
+			setAndroidMode("date");
+			setAndroidTempDate(current);
+		}
+		setOpen(true);
+	};
 
 	const handleChange = (event: DateTimePickerEvent, selected?: Date) => {
 		// Android emits "dismissed" when user cancels.
 		if (Platform.OS === "android") {
-			setOpen(false);
-			if (event.type === "dismissed") return;
+			if (event.type === "dismissed") {
+				close();
+				return;
+			}
+
+			if (androidMode === "date") {
+				if (selected) {
+					setAndroidTempDate(selected);
+				}
+				setAndroidMode("time");
+				return;
+			}
+
+			const base = androidTempDate ?? current;
+			const picked = selected ?? base;
+			const merged = new Date(base);
+			merged.setHours(picked.getHours(), picked.getMinutes(), 0, 0);
+			onChange(toIsoDateTime(merged));
+			close();
+			return;
 		}
+
 		const next = selected ?? current;
-		onChange(toIsoDate(next));
+		onChange(toIsoDateTime(next));
 	};
 
 	return (
@@ -62,15 +99,17 @@ export default function DateField({
 			>
 				<Ionicons name="calendar-outline" size={18} color="#64748b" />
 				<Text className="ml-3 flex-1 text-base font-poppins-medium text-foreground">
-					{value ?? toIsoDate(current)}
+					{value
+						? toDisplay(value)
+						: toDisplay(toIsoDateTime(current))}
 				</Text>
 				<Ionicons name="chevron-down" size={18} color="#64748b" />
 			</Pressable>
 
 			{Platform.OS === "android" && open ? (
 				<DateTimePicker
-					mode="date"
-					value={current}
+					mode={androidMode}
+					value={androidTempDate ?? current}
 					onChange={handleChange}
 					display="default"
 				/>
@@ -98,7 +137,7 @@ export default function DateField({
 						<View className="rounded-3xl bg-white p-4">
 							<View className="flex-row items-center justify-between">
 								<Text className="text-base font-poppins-bold text-foreground">
-									Select date
+									Select date & time
 								</Text>
 								<Pressable onPress={close} hitSlop={10}>
 									<Text className="text-sm font-poppins-semibold text-blue-600">
@@ -107,7 +146,7 @@ export default function DateField({
 								</Pressable>
 							</View>
 							<DateTimePicker
-								mode="date"
+								mode="datetime"
 								value={current}
 								onChange={handleChange}
 								display="spinner"

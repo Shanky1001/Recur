@@ -19,6 +19,7 @@ import BottomSheetPicker, {
 } from "@/src/components/forms/BottomSheetPicker";
 import DateField from "@/src/components/forms/DateField";
 import SelectField from "@/src/components/forms/SelectField";
+import type { SubscriptionStatus } from "@/src/components/subscriptions/SubscriptionCard";
 import Card from "@/src/components/ui/Card";
 import {
 	BILLING_CYCLES,
@@ -37,12 +38,6 @@ import {
 	useSubscriptions,
 } from "@/src/state/appState";
 import { router } from "expo-router";
-
-function addDays(days: number): string {
-	const date = new Date();
-	date.setDate(date.getDate() + days);
-	return date.toISOString().slice(0, 10);
-}
 
 function addBillingCycle(date: Date, cycle: BillingCycle): Date {
 	const d = new Date(date);
@@ -72,9 +67,7 @@ export default function AddSubscriptionScreen() {
 	const [billingCycle, setBillingCycle] = useState<BillingCycle>(
 		serviceConfig.defaultCycle,
 	);
-	const [startDate, setStartDate] = useState(
-		new Date().toISOString().slice(0, 10),
-	);
+	const [startDate, setStartDate] = useState(new Date().toISOString());
 	const [cost, setCost] = useState(String(serviceConfig.defaultCost));
 	const [paymentMethod, setPaymentMethod] = useState<
 		PaymentMethod | undefined
@@ -84,6 +77,9 @@ export default function AddSubscriptionScreen() {
 	);
 	const [category, setCategory] = useState<Category>(
 		serviceConfig.defaultCategory ?? "Other",
+	);
+	const [status, setStatus] = useState<SubscriptionStatus>(
+		serviceConfig.defaultStatus,
 	);
 
 	const [picker, setPicker] = useState<
@@ -105,6 +101,7 @@ export default function AddSubscriptionScreen() {
 		setBillingCycle(serviceConfig.defaultCycle);
 		setCost(String(serviceConfig.defaultCost));
 		setCategory(serviceConfig.defaultCategory ?? "Other");
+		setStatus(serviceConfig.defaultStatus);
 	}, [serviceConfig]);
 
 	const saveSubscription = async () => {
@@ -126,9 +123,7 @@ export default function AddSubscriptionScreen() {
 		const nextPaymentDate = addBillingCycle(
 			new Date(startDate),
 			billingCycle,
-		)
-			.toISOString()
-			.slice(0, 10);
+		).toISOString();
 		const pricePerBillingCycle = Math.round(parsedCost);
 		const pricePerMonth =
 			billingCycle === "Yearly"
@@ -139,7 +134,7 @@ export default function AddSubscriptionScreen() {
 			id,
 			name: service,
 			category,
-			status: serviceConfig.defaultStatus,
+			status,
 			planName: plan,
 			currencySymbol: dashboard.currencySymbol,
 			billingCycle,
@@ -328,11 +323,55 @@ export default function AddSubscriptionScreen() {
 						/>
 
 						<DateField
-							label="Start date"
+							label="Start date & time"
 							subLabel="When the subscription started (or will start)"
 							value={startDate}
 							onChange={setStartDate}
 						/>
+
+						<View className="pb-4">
+							<Text className="text-sm font-poppins-bold text-foreground">
+								Status
+							</Text>
+							<View className="mt-2 flex-row rounded-2xl border border-border bg-white p-1">
+								<Pressable
+									onPress={() => setStatus("active")}
+									className={
+										status === "active"
+											? "flex-1 rounded-xl bg-blue-600 px-4 py-3"
+											: "flex-1 rounded-xl px-4 py-3"
+									}
+								>
+									<Text
+										className={
+											status === "active"
+												? "text-center text-sm font-poppins-bold text-white"
+												: "text-center text-sm font-poppins-semibold text-foreground"
+										}
+									>
+										Active
+									</Text>
+								</Pressable>
+								<Pressable
+									onPress={() => setStatus("trial")}
+									className={
+										status === "trial"
+											? "flex-1 rounded-xl bg-blue-600 px-4 py-3"
+											: "flex-1 rounded-xl px-4 py-3"
+									}
+								>
+									<Text
+										className={
+											status === "trial"
+												? "text-center text-sm font-poppins-bold text-white"
+												: "text-center text-sm font-poppins-semibold text-foreground"
+										}
+									>
+										Trial
+									</Text>
+								</Pressable>
+							</View>
+						</View>
 
 						<View className="flex-row items-center justify-between rounded-2xl border border-border bg-white px-4 py-4">
 							<View className="flex-1 pr-4">
