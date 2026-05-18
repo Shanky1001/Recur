@@ -74,8 +74,8 @@ function buildReminderContent(subscription: Subscription) {
 	};
 }
 
-function inAppNotificationId(subscriptionId: string, atIso: string): string {
-	return `${subscriptionId}:renewal:${atIso}`;
+function inAppNotificationId(subscription: Subscription): string {
+	return `${subscription.id}:renewal:${subscription.nextPaymentDate}`;
 }
 
 function toIndianDateTime(input: Date | number | string): string {
@@ -99,8 +99,14 @@ function toIndianDateTime(input: Date | number | string): string {
 export function createExpoNotificationEngine(
 	repository: AppRepository,
 ): NotificationEngine {
+	type ScheduleContext = {
+		notificationIds?: Set<string>;
+		jobBySubscriptionId?: Map<string, NotificationJob | null>;
+	};
+
 	let bootstrapped = false;
 	let canSchedule = false;
+	let permissionPromptAttempted = false;
 	let notificationsMod: typeof import("expo-notifications") | null = null;
 
 	async function getExpoNotifications() {
@@ -138,7 +144,8 @@ export function createExpoNotificationEngine(
 
 		try {
 			let settings = await Notifications.getPermissionsAsync();
-			if (settings.status !== "granted") {
+			if (settings.status !== "granted" && !permissionPromptAttempted) {
+				permissionPromptAttempted = true;
 				settings = await Notifications.requestPermissionsAsync();
 			}
 			canSchedule = settings.status === "granted";
@@ -167,7 +174,12 @@ export function createExpoNotificationEngine(
 		if (!Notifications) return false;
 		try {
 			let settings = await Notifications.getPermissionsAsync();
-			if (settings.status !== "granted") {
+			const status = String(settings.status ?? "");
+			if (
+				status !== "granted" &&
+				(status === "undetermined" || !permissionPromptAttempted)
+			) {
+				permissionPromptAttempted = true;
 				settings = await Notifications.requestPermissionsAsync();
 			}
 			canSchedule = settings.status === "granted";
@@ -193,6 +205,55 @@ export function createExpoNotificationEngine(
 		} catch {
 			// ignore
 		}
+
+		// Remove paired in-app reminder row for the cancelled schedule.
+		// Pairing is done by subscription + reminder type and matching trigger timestamp.
+		let all: Notification[] = [];
+		try {
+			all = await repository.loadNotifications();
+		} catch {
+			all = [];
+		}
+		for (const n of all) {
+			if (n.subscriptionId !== job.subscriptionId) continue;
+			if (n.type !== "billing") continue;
+			const isPairedByTime = n.createdAt === job.triggerAt;
+			const isLegacyPairedId = n.id.startsWith(
+				`${job.subscriptionId}:renewal:`,
+			);
+			if (!isPairedByTime && !isLegacyPairedId) continue;
+			try {
+				await repository.deleteNotification(n.id);
+			} catch {
+				// ignore
+			}
+		}
+	}
+
+	async function getExistingJob(
+		subscriptionId: string,
+		ctx?: ScheduleContext,
+	): Promise<NotificationJob | null> {
+		const map = ctx?.jobBySubscriptionId;
+		if (map) {
+			if (map.has(subscriptionId)) return map.get(subscriptionId) ?? null;
+			let fetched: NotificationJob | null = null;
+			try {
+				fetched = await repository.getNotificationJob(
+					jobId(subscriptionId),
+				);
+			} catch {
+				fetched = null;
+			}
+			map.set(subscriptionId, fetched);
+			return fetched;
+		}
+
+		try {
+			return await repository.getNotificationJob(jobId(subscriptionId));
+		} catch {
+			return null;
+		}
 	}
 
 	async function clearInAppNotificationsForSubscription(
@@ -215,11 +276,15 @@ export function createExpoNotificationEngine(
 		}
 	}
 
-	async function hasInAppReminderInWindow(
-		subscriptionId: string,
-		startMs: number,
-		endMs: number,
+	async function hasAlreadyFiredForCycle(
+		subscription: Subscription,
+		ctx?: ScheduleContext,
 	): Promise<boolean> {
+		const expectedId = inAppNotificationId(subscription);
+		if (ctx?.notificationIds) {
+			return ctx.notificationIds.has(expectedId);
+		}
+
 		let all: Notification[] = [];
 		try {
 			all = await repository.loadNotifications();
@@ -228,26 +293,26 @@ export function createExpoNotificationEngine(
 		}
 
 		for (const n of all) {
-			if (n.subscriptionId !== subscriptionId) continue;
-			if (n.type !== "billing") continue;
-			const t = Date.parse(n.createdAt);
-			if (!Number.isFinite(t)) continue;
-			if (t >= startMs && t <= endMs) return true;
+			if (n.id === expectedId) return true;
 		}
 
 		return false;
 	}
 
-	async function scheduleRenewalReminder(subscription: Subscription) {
+	async function scheduleRenewalReminder(
+		subscription: Subscription,
+		ctx?: ScheduleContext,
+	) {
 		const Notifications = await getExpoNotifications();
 		if (!Notifications) return;
 
 		const enabled = subscription.reminderEnabled ?? true;
 		if (!enabled || subscription.status === "cancelled") {
-			const existing = await repository.getNotificationJob(
-				jobId(subscription.id),
-			);
-			if (existing) await cancelJob(existing);
+			const existing = await getExistingJob(subscription.id, ctx);
+			if (existing) {
+				await cancelJob(existing);
+				ctx?.jobBySubscriptionId?.set(subscription.id, null);
+			}
 			return;
 		}
 
@@ -255,40 +320,48 @@ export function createExpoNotificationEngine(
 		const startMs = reminderStartMs(subscription);
 		const endMs = reminderEndMs(subscription);
 		if (startMs == null || endMs == null) {
-			const existing = await repository.getNotificationJob(
-				jobId(subscription.id),
-			);
-			if (existing) await cancelJob(existing);
+			const existing = await getExistingJob(subscription.id, ctx);
+			if (existing) {
+				await cancelJob(existing);
+				ctx?.jobBySubscriptionId?.set(subscription.id, null);
+			}
 			return;
 		}
 
 		if (nowMs > endMs) {
-			const existing = await repository.getNotificationJob(
-				jobId(subscription.id),
-			);
-			if (existing) await cancelJob(existing);
+			const existing = await getExistingJob(subscription.id, ctx);
+			if (existing) {
+				await cancelJob(existing);
+				ctx?.jobBySubscriptionId?.set(subscription.id, null);
+			}
 			return;
 		}
 
 		if (nowMs >= startMs && nowMs <= endMs) {
-			const alreadyNotifiedInWindow = await hasInAppReminderInWindow(
-				subscription.id,
-				startMs,
-				endMs,
+			const alreadyNotifiedInWindow = await hasAlreadyFiredForCycle(
+				subscription,
+				ctx,
 			);
 			if (alreadyNotifiedInWindow) {
 				return;
 			}
 
-			const existing = await repository.getNotificationJob(
-				jobId(subscription.id),
-			);
+			const existing = await getExistingJob(subscription.id, ctx);
 			if (existing) {
 				const existingMs = Date.parse(existing.triggerAt);
+				if (
+					Number.isFinite(existingMs) &&
+					existingMs >= startMs &&
+					existingMs <= nowMs
+				) {
+					// Already fired (or attempted) in this cycle; do not schedule again.
+					return;
+				}
 				if (Number.isFinite(existingMs) && existingMs > nowMs) {
 					return;
 				}
 				await cancelJob(existing);
+				ctx?.jobBySubscriptionId?.set(subscription.id, null);
 			}
 
 			const triggerDate = new Date(nowMs + 2 * 60 * 1000);
@@ -324,8 +397,16 @@ export function createExpoNotificationEngine(
 					expoNotificationId,
 					createdAt: nowIsoUtc(),
 				});
+				ctx?.jobBySubscriptionId?.set(subscription.id, {
+					id: jobId(subscription.id),
+					subscriptionId: subscription.id,
+					type: "renewalReminder",
+					triggerAt,
+					expoNotificationId,
+					createdAt: nowIsoUtc(),
+				});
 				await repository.upsertNotification({
-					id: inAppNotificationId(subscription.id, triggerAt),
+					id: inAppNotificationId(subscription),
 					title: `Upcoming renewal: ${subscription.name}`,
 					message: `Renews on ${toIndianDateTime(subscription.nextPaymentDate)}`,
 					type: "billing",
@@ -333,16 +414,20 @@ export function createExpoNotificationEngine(
 					createdAt: triggerAt,
 					read: false,
 				});
-			} catch {}
+				ctx?.notificationIds?.add(inAppNotificationId(subscription));
+			} catch {
+				// ignore
+			}
 			return;
 		}
 
 		let triggerDate = buildRenewalTrigger(subscription);
 		if (!triggerDate) {
-			const existing = await repository.getNotificationJob(
-				jobId(subscription.id),
-			);
-			if (existing) await cancelJob(existing);
+			const existing = await getExistingJob(subscription.id, ctx);
+			if (existing) {
+				await cancelJob(existing);
+				ctx?.jobBySubscriptionId?.set(subscription.id, null);
+			}
 			return;
 		}
 
@@ -351,11 +436,12 @@ export function createExpoNotificationEngine(
 		}
 
 		const triggerAt = triggerDate.toISOString();
-		const existing = await repository.getNotificationJob(
-			jobId(subscription.id),
-		);
+		const existing = await getExistingJob(subscription.id, ctx);
 		if (existing && existing.triggerAt === triggerAt) return;
-		if (existing) await cancelJob(existing);
+		if (existing) {
+			await cancelJob(existing);
+			ctx?.jobBySubscriptionId?.set(subscription.id, null);
+		}
 
 		if (!(await ensureCanSchedule())) {
 			// Permissions not granted; don't attempt to schedule.
@@ -394,8 +480,9 @@ export function createExpoNotificationEngine(
 		};
 		try {
 			await repository.upsertNotificationJob(job);
+			ctx?.jobBySubscriptionId?.set(subscription.id, job);
 			await repository.upsertNotification({
-				id: inAppNotificationId(subscription.id, triggerAt),
+				id: inAppNotificationId(subscription),
 				title: `Upcoming renewal: ${subscription.name}`,
 				message: `Renews on ${toIndianDateTime(subscription.nextPaymentDate)}`,
 				type: "billing",
@@ -403,6 +490,7 @@ export function createExpoNotificationEngine(
 				createdAt: triggerAt,
 				read: false,
 			});
+			ctx?.notificationIds?.add(inAppNotificationId(subscription));
 		} catch {
 			// ignore
 		}
@@ -414,26 +502,41 @@ export function createExpoNotificationEngine(
 		},
 		syncForSubscriptions: async (subscriptions) => {
 			await ensureBootstrapped();
+			const ctx: ScheduleContext = {
+				notificationIds: new Set<string>(),
+				jobBySubscriptionId: new Map<string, NotificationJob | null>(),
+			};
+			try {
+				const allNotifications = await repository.loadNotifications();
+				for (const n of allNotifications)
+					ctx.notificationIds?.add(n.id);
+			} catch {
+				// ignore
+			}
+			let allJobs: NotificationJob[] = [];
+			try {
+				allJobs = await repository.loadNotificationJobs();
+				for (const job of allJobs) {
+					ctx.jobBySubscriptionId?.set(job.subscriptionId, job);
+				}
+			} catch {
+				allJobs = [];
+			}
 			// Reschedule all renewal reminders.
 			for (const sub of subscriptions) {
 				try {
-					await scheduleRenewalReminder(sub);
+					await scheduleRenewalReminder(sub, ctx);
 				} catch {
 					// ignore
 				}
 			}
 			// Clean up jobs for subscriptions that no longer exist.
-			let allJobs: NotificationJob[] = [];
-			try {
-				allJobs = await repository.loadNotificationJobs();
-			} catch {
-				allJobs = [];
-			}
 			const ids = new Set(subscriptions.map((s) => s.id));
 			for (const job of allJobs) {
 				if (!ids.has(job.subscriptionId)) {
 					try {
 						await cancelJob(job);
+						ctx.jobBySubscriptionId?.set(job.subscriptionId, null);
 					} catch {
 						// ignore
 					}
