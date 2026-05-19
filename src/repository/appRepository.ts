@@ -3,6 +3,7 @@ import type { Notification } from "@/src/data/dummy";
 import type {
 	NotificationJob,
 	Preferences,
+	ServiceCatalogItem,
 	UserProfile,
 } from "@/src/repository/models";
 
@@ -10,6 +11,7 @@ export type HydratedData = {
 	user: UserProfile;
 	subscriptions: Subscription[];
 	notifications: Notification[];
+	services: ServiceCatalogItem[];
 	preferences: Preferences;
 };
 
@@ -45,6 +47,10 @@ export interface AppRepository {
 		subscriptionId: string,
 	) => Promise<void>;
 	clearNotificationJobs: () => Promise<void>;
+
+	loadServices: () => Promise<ServiceCatalogItem[]>;
+	upsertService: (service: ServiceCatalogItem) => Promise<void>;
+	deleteService: (name: string) => Promise<void>;
 
 	resetLocalData: () => Promise<void>;
 }

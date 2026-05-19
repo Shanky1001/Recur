@@ -26,7 +26,7 @@ export type ServiceConfig = {
 	plans: readonly string[];
 	defaultCycle: BillingCycle;
 	defaultCost: number;
-	defaultCategory: Category;
+	defaultCategory: string;
 	defaultStatus: "active" | "trial";
 };
 

@@ -12,12 +12,14 @@ import {
 	deleteNotification,
 	deleteNotificationJob,
 	deleteNotificationJobsBySubscriptionId,
+	deleteService,
 	deleteSubscription,
 	getNotificationJob,
 	initSqlite,
 	loadNotificationJobs,
 	loadNotifications,
 	loadPreferences,
+	loadServices,
 	loadSubscriptions,
 	loadUserProfile,
 	markAllNotificationsRead,
@@ -26,6 +28,7 @@ import {
 	upsertNotification,
 	upsertNotificationJob,
 	upsertPreferences,
+	upsertService,
 	upsertSubscription,
 	upsertUserProfile,
 } from "@/src/db/sqlite";
@@ -99,6 +102,15 @@ export const sqliteAppRepository: AppRepository = {
 	},
 	clearNotificationJobs: async () => {
 		await clearNotificationJobs();
+	},
+	loadServices: async () => {
+		return await loadServices();
+	},
+	upsertService: async (service) => {
+		await upsertService(service);
+	},
+	deleteService: async (name: string) => {
+		await deleteService(name);
 	},
 	resetLocalData: async () => {
 		await resetLocalData();

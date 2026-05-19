@@ -23,18 +23,16 @@ import type { SubscriptionStatus } from "@/src/components/subscriptions/Subscrip
 import Card from "@/src/components/ui/Card";
 import {
 	BILLING_CYCLES,
-	CATEGORIES,
 	PAYMENT_METHODS,
-	SERVICES_LIST,
 	type BillingCycle,
-	type Category,
 	type PaymentMethod,
-	type ServiceKey,
+	type ServiceConfig,
 } from "@/src/constants/subscriptionsCatalog";
 import {
 	useAppActions,
 	useDashboard,
 	usePreferences,
+	useServices,
 	useSubscriptions,
 } from "@/src/state/appState";
 import { router } from "expo-router";
@@ -54,13 +52,25 @@ export default function AddSubscriptionScreen() {
 	const dashboard = useDashboard();
 	const preferences = usePreferences();
 	const subscriptions = useSubscriptions();
+	const services = useServices();
 	const { addSubscription } = useAppActions();
 
-	const [service, setService] = useState<ServiceKey>("Netflix");
+	const fallbackService: ServiceConfig = {
+		name: "Custom Service",
+		plans: ["Standard"],
+		defaultCycle: "Monthly",
+		defaultCost: 0,
+		defaultCategory: "Other",
+		defaultStatus: "active",
+	};
+
+	const [service, setService] = useState<string>(services[0]?.name ?? "");
 	const serviceConfig = useMemo(
 		() =>
-			SERVICES_LIST.find((s) => s.name === service) ?? SERVICES_LIST[0]!,
-		[service],
+			services.find((s) => s.name === service) ??
+			services[0] ??
+			fallbackService,
+		[services, service],
 	);
 
 	const [plan, setPlan] = useState<string>(serviceConfig.plans[0]!);
@@ -75,7 +85,7 @@ export default function AddSubscriptionScreen() {
 	const [reminderEnabled, setReminderEnabled] = useState(
 		Boolean(preferences.defaultReminderEnabled ?? true),
 	);
-	const [category, setCategory] = useState<Category>(
+	const [category, setCategory] = useState<string>(
 		serviceConfig.defaultCategory ?? "Other",
 	);
 	const [status, setStatus] = useState<SubscriptionStatus>(
@@ -92,6 +102,22 @@ export default function AddSubscriptionScreen() {
 		  }
 		| { open: false }
 	>({ open: false });
+
+	const categoryOptions = useMemo(() => {
+		const set = new Set<string>(["Other"]);
+		for (const s of services) {
+			if (s.defaultCategory?.trim()) set.add(s.defaultCategory.trim());
+		}
+		return Array.from(set).sort((a, b) => a.localeCompare(b));
+	}, [services]);
+
+	React.useEffect(() => {
+		if (!services.length) return;
+		const exists = services.some((s) => s.name === service);
+		if (!service || !exists) {
+			setService(services[0]!.name);
+		}
+	}, [services, service]);
 
 	// keep plan valid when service changes
 	React.useEffect(() => {
@@ -224,7 +250,7 @@ export default function AddSubscriptionScreen() {
 								setPicker({
 									open: true,
 									title: "Service Name",
-									items: SERVICES_LIST.map((s) => ({
+									items: services.map((s) => ({
 										label: s.name,
 										value: s.name,
 										left: s.logoUri ? (
@@ -239,8 +265,7 @@ export default function AddSubscriptionScreen() {
 										) : null,
 									})),
 									selected: service,
-									onSelect: (v) =>
-										setService(v as ServiceKey),
+									onSelect: (v) => setService(v),
 								})
 							}
 						/>
@@ -400,12 +425,12 @@ export default function AddSubscriptionScreen() {
 								setPicker({
 									open: true,
 									title: "Category",
-									items: CATEGORIES.map((c) => ({
+									items: categoryOptions.map((c) => ({
 										label: c,
 										value: c,
 									})),
 									selected: category,
-									onSelect: (v) => setCategory(v as Category),
+									onSelect: (v) => setCategory(v),
 								})
 							}
 						/>

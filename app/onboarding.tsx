@@ -15,11 +15,16 @@ import OnboardingStepContent from "@/src/components/onboarding/OnboardingStepCon
 import OnboardingStepHeader from "@/src/components/onboarding/OnboardingStepHeader";
 import type { CurrencyKey } from "@/src/components/onboarding/types";
 import {
-	SERVICES_LIST,
 	type BillingCycle,
+	type ServiceConfig,
 } from "@/src/constants/subscriptionsCatalog";
 import { OnboardingSteps } from "@/src/data/dummy";
-import { useAppActions, usePreferences, useUser } from "@/src/state/appState";
+import {
+	useAppActions,
+	usePreferences,
+	useServices,
+	useUser,
+} from "@/src/state/appState";
 import {
 	currencyToSymbol,
 	getPresetAvatarUrls,
@@ -33,6 +38,7 @@ const presetAvatars = getPresetAvatarUrls();
 export default function OnboardingScreen() {
 	const user = useUser();
 	const preferences = usePreferences();
+	const services = useServices();
 	const { updateUserProfile, updatePreferences, addSubscription } =
 		useAppActions();
 
@@ -53,19 +59,38 @@ export default function OnboardingScreen() {
 	const [cost, setCost] = useState<string>("");
 	const [navDirection, setNavDirection] = useState<1 | -1>(1);
 
+	const fallbackService: ServiceConfig = {
+		name: "Custom Service",
+		plans: ["Standard"],
+		defaultCycle: "Monthly",
+		defaultCost: 0,
+		defaultCategory: "Other",
+		defaultStatus: "active",
+	};
+
 	const popularServices = useMemo(() => {
 		const found = names
-			.map((n) => SERVICES_LIST.find((s) => s.name === n))
-			.filter((s): s is (typeof SERVICES_LIST)[number] => Boolean(s));
-		return found.length ? found : SERVICES_LIST.slice(0, 6);
-	}, []);
+			.map((n) => services.find((s) => s.name === n))
+			.filter((s): s is ServiceConfig => Boolean(s));
+		if (found.length) return found;
+		if (services.length) return services.slice(0, 6);
+		return [fallbackService];
+	}, [services]);
 
 	const serviceConfig = useMemo(() => {
 		return (
-			SERVICES_LIST.find((s) => s.name === selectedService) ??
+			services.find((s) => s.name === selectedService) ??
 			popularServices[0]!
 		);
-	}, [popularServices, selectedService]);
+	}, [popularServices, selectedService, services]);
+
+	useEffect(() => {
+		if (!services.length) return;
+		const exists = services.some((s) => s.name === selectedService);
+		if (!selectedService || !exists) {
+			setSelectedService(services[0]!.name);
+		}
+	}, [services, selectedService]);
 
 	useEffect(() => {
 		if (!cost) setCost(String(serviceConfig.defaultCost));

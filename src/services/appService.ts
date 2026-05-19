@@ -1,4 +1,5 @@
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
+import { SERVICES_LIST } from "@/src/constants/subscriptionsCatalog";
 import type { Notification } from "@/src/data/dummy";
 import type { NotificationEngine } from "@/src/notifications";
 import { createNotificationEngine } from "@/src/notifications";
@@ -6,7 +7,11 @@ import type {
 	AppRepository,
 	HydratedData,
 } from "@/src/repository/appRepository";
-import type { Preferences, UserProfile } from "@/src/repository/models";
+import type {
+	Preferences,
+	ServiceCatalogItem,
+	UserProfile,
+} from "@/src/repository/models";
 import { sqliteAppRepository } from "@/src/repository/sqliteAppRepository";
 import { nextPaymentFromStartDate } from "@/src/utils/helper";
 
@@ -16,6 +21,8 @@ export type AppService = {
 	resyncReminders: (subscriptions: Subscription[]) => Promise<void>;
 	updatePreferences: (preferences: Preferences) => Promise<Preferences>;
 	updateUserProfile: (profile: UserProfile) => Promise<UserProfile>;
+	upsertService: (service: ServiceCatalogItem) => Promise<ServiceCatalogItem>;
+	deleteService: (name: string) => Promise<void>;
 
 	upsertSubscription: (subscription: Subscription) => Promise<Subscription>;
 	cancelSubscription: (id: string) => Promise<void>;
@@ -54,6 +61,28 @@ function defaultUserProfile(): UserProfile {
 	};
 }
 
+function defaultServices(): ServiceCatalogItem[] {
+	return SERVICES_LIST.map((s) => ({
+		name: s.name,
+		logoUri: s.logoUri,
+		plans: [...s.plans],
+		defaultCycle: s.defaultCycle,
+		defaultCost: s.defaultCost,
+		defaultCategory: s.defaultCategory,
+		defaultStatus: s.defaultStatus,
+		createdAt: nowIsoUtc(),
+		updatedAt: nowIsoUtc(),
+	}));
+}
+
+async function ensureSeedServices(repository: AppRepository): Promise<void> {
+	const current = await repository.loadServices();
+	if (current.length > 0) return;
+	for (const svc of defaultServices()) {
+		await repository.upsertService(svc);
+	}
+}
+
 export function createAppService(
 	repository: AppRepository = sqliteAppRepository,
 	notificationEngine: NotificationEngine = createNotificationEngine(
@@ -75,17 +104,25 @@ export function createAppService(
 				preferences = defaultPreferences();
 				await repository.upsertPreferences(preferences);
 			}
+			await ensureSeedServices(repository);
 			const [subscriptions, notifications] = await Promise.all([
 				repository.loadSubscriptions(),
 				repository.loadNotifications(),
 			]);
+			const services = await repository.loadServices();
 			try {
 				await notificationEngine.bootstrap();
 				await notificationEngine.syncForSubscriptions(subscriptions);
 			} catch {
 				// Notifications are best-effort; never block app startup.
 			}
-			return { user, subscriptions, notifications, preferences };
+			return {
+				user,
+				subscriptions,
+				notifications,
+				services,
+				preferences,
+			};
 		},
 		resetLocalData: async () => {
 			try {
@@ -101,16 +138,24 @@ export function createAppService(
 			await repository.clearPreferences();
 			const preferences = defaultPreferences();
 			await repository.upsertPreferences(preferences);
+			await ensureSeedServices(repository);
 			const [subscriptions, notifications] = await Promise.all([
 				repository.loadSubscriptions(),
 				repository.loadNotifications(),
 			]);
+			const services = await repository.loadServices();
 			try {
 				await notificationEngine.syncForSubscriptions(subscriptions);
 			} catch {
 				// ignore
 			}
-			return { user, subscriptions, notifications, preferences };
+			return {
+				user,
+				subscriptions,
+				notifications,
+				services,
+				preferences,
+			};
 		},
 		resyncReminders: async (subscriptions: Subscription[]) => {
 			try {
@@ -135,6 +180,28 @@ export function createAppService(
 			};
 			await repository.upsertUserProfile(next);
 			return next;
+		},
+		upsertService: async (service: ServiceCatalogItem) => {
+			const next: ServiceCatalogItem = {
+				...service,
+				name: service.name.trim(),
+				plans: (service.plans ?? [])
+					.map((p) => String(p).trim())
+					.filter(Boolean),
+				defaultCategory: service.defaultCategory?.trim() || "Other",
+				logoUri: service.logoUri?.trim() || undefined,
+				updatedAt: nowIsoUtc(),
+			};
+			if (!next.createdAt) next.createdAt = next.updatedAt;
+			if (!next.plans.length) next.plans = ["Standard"];
+			if (!Number.isFinite(next.defaultCost) || next.defaultCost < 0) {
+				next.defaultCost = 0;
+			}
+			await repository.upsertService(next);
+			return next;
+		},
+		deleteService: async (name: string) => {
+			await repository.deleteService(name);
 		},
 		upsertSubscription: async (subscription: Subscription) => {
 			const prefs =

@@ -24,3 +24,15 @@ export type UserProfile = {
 	avatarUri: string;
 	updatedAt?: string; // UTC ISO
 };
+
+export type ServiceCatalogItem = {
+	name: string;
+	logoUri?: string;
+	plans: string[];
+	defaultCycle: "Monthly" | "Yearly";
+	defaultCost: number;
+	defaultCategory: string;
+	defaultStatus: "active" | "trial";
+	createdAt?: string;
+	updatedAt?: string;
+};

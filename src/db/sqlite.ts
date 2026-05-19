@@ -6,6 +6,7 @@ import type { Notification } from "@/src/data/dummy";
 import type {
 	NotificationJob,
 	Preferences,
+	ServiceCatalogItem,
 	UserProfile,
 } from "@/src/repository/models";
 
@@ -107,6 +108,18 @@ export async function initSqlite(): Promise<void> {
 				id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
 				name TEXT NOT NULL,
 				avatarUri TEXT NOT NULL,
+				updatedAt TEXT NOT NULL
+			);
+
+			CREATE TABLE IF NOT EXISTS services (
+				name TEXT PRIMARY KEY NOT NULL,
+				logoUri TEXT,
+				plansJson TEXT NOT NULL,
+				defaultCycle TEXT NOT NULL,
+				defaultCost INTEGER NOT NULL,
+				defaultCategory TEXT NOT NULL,
+				defaultStatus TEXT NOT NULL,
+				createdAt TEXT NOT NULL,
 				updatedAt TEXT NOT NULL
 			);
 		`);
@@ -310,6 +323,90 @@ export async function resetLocalData(): Promise<void> {
 	await d.runAsync("DELETE FROM notification_jobs");
 	await d.runAsync("DELETE FROM preferences");
 	await d.runAsync("DELETE FROM user_profile");
+	await d.runAsync("DELETE FROM services");
+}
+
+export async function loadServices(): Promise<ServiceCatalogItem[]> {
+	await initSqlite();
+	const d = db;
+	if (!d) return [];
+	const rows = await d.getAllAsync<any>(
+		"SELECT * FROM services ORDER BY name COLLATE NOCASE ASC",
+	);
+	return rows.map((r) => {
+		let plans: string[] = [];
+		try {
+			const parsed = JSON.parse(String(r.plansJson ?? "[]"));
+			plans = Array.isArray(parsed)
+				? parsed
+						.map((p) => String(p).trim())
+						.filter((p) => p.length > 0)
+				: [];
+		} catch {
+			plans = [];
+		}
+		if (plans.length === 0) plans = ["Standard"];
+
+		const cycle =
+			String(r.defaultCycle) === "Yearly" ? "Yearly" : "Monthly";
+		const status = String(r.defaultStatus) === "trial" ? "trial" : "active";
+
+		return {
+			name: String(r.name),
+			logoUri: r.logoUri == null ? undefined : String(r.logoUri),
+			plans,
+			defaultCycle: cycle,
+			defaultCost: Number(r.defaultCost),
+			defaultCategory: String(r.defaultCategory),
+			defaultStatus: status,
+			createdAt: String(r.createdAt),
+			updatedAt: String(r.updatedAt),
+		};
+	});
+}
+
+export async function upsertService(
+	service: ServiceCatalogItem,
+): Promise<void> {
+	await initSqlite();
+	const d = db;
+	if (!d) return;
+	const createdAt = service.createdAt ?? nowIsoUtc();
+	const updatedAt = service.updatedAt ?? nowIsoUtc();
+	const plans = (service.plans ?? [])
+		.map((p) => String(p).trim())
+		.filter((p) => p.length > 0);
+	await d.runAsync(
+		`INSERT INTO services (name, logoUri, plansJson, defaultCycle, defaultCost, defaultCategory, defaultStatus, createdAt, updatedAt)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(name) DO UPDATE SET
+			logoUri=excluded.logoUri,
+			plansJson=excluded.plansJson,
+			defaultCycle=excluded.defaultCycle,
+			defaultCost=excluded.defaultCost,
+			defaultCategory=excluded.defaultCategory,
+			defaultStatus=excluded.defaultStatus,
+			updatedAt=excluded.updatedAt
+		`,
+		[
+			service.name,
+			service.logoUri ?? null,
+			JSON.stringify(plans.length ? plans : ["Standard"]),
+			service.defaultCycle,
+			Math.round(service.defaultCost),
+			service.defaultCategory,
+			service.defaultStatus,
+			createdAt,
+			updatedAt,
+		],
+	);
+}
+
+export async function deleteService(name: string): Promise<void> {
+	await initSqlite();
+	const d = db;
+	if (!d) return;
+	await d.runAsync("DELETE FROM services WHERE name=?", [name]);
 }
 
 export async function loadPreferences(): Promise<Preferences | null> {

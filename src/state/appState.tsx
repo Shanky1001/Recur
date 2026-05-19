@@ -2,12 +2,14 @@ import React, { useEffect, useMemo } from "react";
 import { Provider } from "react-redux";
 
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
+import type { ServiceConfig } from "@/src/constants/subscriptionsCatalog";
 import type { Notification } from "@/src/data/dummy";
 import {
 	addSubscription,
 	cancelSubscription,
 	clearAllNotifications,
 	deleteNotification,
+	deleteService,
 	deleteSubscription,
 	hydrateApp,
 	markAllNotificationsRead,
@@ -17,6 +19,7 @@ import {
 	snoozeNotification,
 	updatePreferences,
 	updateUserProfile,
+	upsertService,
 	upsertSubscription,
 } from "@/src/store/appSlice";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
@@ -39,6 +42,7 @@ export type AppState = {
 	dashboard: Dashboard;
 	subscriptions: Subscription[];
 	notifications: Notification[];
+	services: ServiceConfig[];
 	preferences: {
 		currency: string;
 		defaultReminderDaysBefore: number;
@@ -74,6 +78,7 @@ export function useAppState() {
 		dashboard: app.dashboard,
 		subscriptions: app.subscriptions,
 		notifications: app.notifications,
+		services: app.services,
 		preferences: app.preferences,
 	};
 	return { state, unreadCount };
@@ -93,6 +98,10 @@ export function useSubscriptions() {
 
 export function useNotificationsList() {
 	return useAppSelector((s: RootState) => s.app.notifications);
+}
+
+export function useServices() {
+	return useAppSelector((s: RootState) => s.app.services);
 }
 
 export function usePreferences() {
@@ -153,6 +162,12 @@ export function useAppActions() {
 			},
 			addSubscription: async (subscription: Subscription) => {
 				await dispatch(addSubscription(subscription)).unwrap();
+			},
+			upsertService: async (service: ServiceConfig) => {
+				await dispatch(upsertService(service)).unwrap();
+			},
+			deleteService: async (name: string) => {
+				await dispatch(deleteService(name)).unwrap();
 			},
 		}),
 		[dispatch],

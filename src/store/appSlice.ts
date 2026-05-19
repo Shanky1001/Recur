@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
+import type { ServiceConfig } from "@/src/constants/subscriptionsCatalog";
 import type { Notification } from "@/src/data/dummy";
 import { appService } from "@/src/services/appService";
 import { parseIsoLike } from "@/src/utils/helper";
@@ -43,6 +44,7 @@ export type AppState = {
 	dashboard: Dashboard;
 	subscriptions: Subscription[];
 	notifications: Notification[];
+	services: ServiceConfig[];
 	preferences: PreferencesState;
 	hydrated: boolean;
 };
@@ -125,6 +127,24 @@ export const addSubscription = createAsyncThunk(
 	"subscriptions/add",
 	async (subscription: Subscription) => {
 		return await appService.upsertSubscription(subscription);
+	},
+);
+
+export const upsertService = createAsyncThunk(
+	"services/upsert",
+	async (service: ServiceConfig) => {
+		return await appService.upsertService({
+			...service,
+			plans: [...service.plans],
+		});
+	},
+);
+
+export const deleteService = createAsyncThunk(
+	"services/delete",
+	async (name: string) => {
+		await appService.deleteService(name);
+		return name;
 	},
 );
 
@@ -217,6 +237,7 @@ const initialState: AppState = {
 	},
 	subscriptions: [],
 	notifications: [],
+	services: [],
 	preferences: {
 		currency: "INR",
 		defaultReminderDaysBefore: 3,
@@ -239,6 +260,7 @@ const appSlice = createSlice({
 				};
 				state.subscriptions = action.payload.subscriptions;
 				state.notifications = action.payload.notifications;
+				state.services = action.payload.services;
 				state.preferences = {
 					currency: action.payload.preferences.currency,
 					defaultReminderDaysBefore:
@@ -264,6 +286,7 @@ const appSlice = createSlice({
 				};
 				state.subscriptions = action.payload.subscriptions;
 				state.notifications = action.payload.notifications;
+				state.services = action.payload.services;
 				state.preferences = {
 					currency: action.payload.preferences.currency,
 					defaultReminderDaysBefore:
@@ -307,6 +330,22 @@ const appSlice = createSlice({
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,
+				);
+			})
+			.addCase(upsertService.fulfilled, (state, action) => {
+				const idx = state.services.findIndex(
+					(s) =>
+						s.name.trim().toLowerCase() ===
+						action.payload.name.trim().toLowerCase(),
+				);
+				if (idx >= 0) state.services[idx] = action.payload;
+				else state.services.unshift(action.payload);
+			})
+			.addCase(deleteService.fulfilled, (state, action) => {
+				state.services = state.services.filter(
+					(s) =>
+						s.name.trim().toLowerCase() !==
+						action.payload.trim().toLowerCase(),
 				);
 			})
 			.addCase(cancelSubscription.fulfilled, (state, action) => {

@@ -23,6 +23,7 @@ import {
 	useAppState,
 	useDashboard,
 	usePreferences,
+	useServices,
 	useSubscriptions,
 	useUser,
 } from "@/src/state/appState";
@@ -110,6 +111,7 @@ export default function ProfileScreen() {
 	const user = useUser();
 	const dashboard = useDashboard();
 	const subscriptions = useSubscriptions();
+	const services = useServices();
 	const { state } = useAppState();
 	const preferences = usePreferences();
 	const { clearAllNotifications, upsertSubscription, updatePreferences } =
@@ -132,11 +134,6 @@ export default function ProfileScreen() {
 		const yearly = monthly * 12;
 		return { active, monthly, yearly };
 	}, [dashboard.totalMonthlySpend, subscriptions]);
-
-	const categories = useMemo(() => {
-		const set = new Set(subscriptions.map((s) => s.category));
-		return Array.from(set).sort((a, b) => a.localeCompare(b));
-	}, [subscriptions]);
 
 	const archivedCount = useMemo(
 		() => subscriptions.filter((s) => s.status === "cancelled").length,
@@ -386,16 +383,9 @@ export default function ProfileScreen() {
 				<Section title="Subscription Management">
 					<Row
 						icon="pricetag-outline"
-						label="Manage categories"
-						subLabel={`${categories.length} categories`}
-						onPress={() => {
-							Alert.alert(
-								"Categories",
-								categories.length
-									? categories.join("\n")
-									: "No categories yet.",
-							);
-						}}
+						label="Manage services"
+						subLabel={`${services.length} services`}
+						onPress={() => router.push("/manage-services")}
 					/>
 					<Divider />
 					<Row
