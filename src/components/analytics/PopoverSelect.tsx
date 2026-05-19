@@ -112,9 +112,11 @@ export default function PopoverSelect<T extends string>({
 										left,
 										width: menuWidth,
 										borderRadius: 14,
+										borderWidth: StyleSheet.hairlineWidth,
+										borderColor: "rgba(8, 17, 38, 0.10)",
 										overflow: "hidden",
-										backgroundColor: "white",
-										shadowColor: "#000",
+										backgroundColor: "#fff",
+										shadowColor: "#eee",
 										shadowOpacity: 0.14,
 										shadowRadius: 18,
 										shadowOffset: { width: 0, height: 10 },
@@ -130,7 +132,7 @@ export default function PopoverSelect<T extends string>({
 														close();
 														onChange(opt.key);
 													}}
-													className="flex-row items-center justify-between px-4"
+													className="flex-row items-center justify-between p-4"
 													style={({ pressed }) => ({
 														height: rowH,
 														backgroundColor: pressed
