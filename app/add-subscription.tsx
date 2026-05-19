@@ -212,7 +212,11 @@ export default function AddSubscriptionScreen() {
 					hitSlop={10}
 					className="size-11 items-center justify-center rounded-full border border-border bg-white"
 				>
-					<Ionicons name="chevron-back" size={22} color="#081126" />
+					<Ionicons
+						name="chevron-back"
+						size={22}
+						className="text-foreground"
+					/>
 				</Pressable>
 				<Text className="ml-4 text-xl font-poppins-bold text-foreground">
 					Add Subscription
@@ -228,10 +232,7 @@ export default function AddSubscriptionScreen() {
 					className="bg-gray-100"
 					contentContainerStyle={{ paddingBottom: 120 }}
 				>
-					<Card
-						elevated={false}
-						className="rounded-3xl bg-slate-50 p-3 m-2"
-					>
+					<Card elevated={false} className="rounded-3xl p-3 m-2">
 						<SelectField
 							label="Service Name"
 							value={service}
@@ -288,10 +289,7 @@ export default function AddSubscriptionScreen() {
 						/>
 					</Card>
 
-					<Card
-						elevated={false}
-						className="rounded-3xl bg-slate-50 p-3 m-2"
-					>
+					<Card elevated={false} className="rounded-3xl p-3 m-2">
 						<SelectField
 							label="Billing Cycle"
 							value={billingCycle}
@@ -414,10 +412,7 @@ export default function AddSubscriptionScreen() {
 						</View>
 					</Card>
 
-					<Card
-						elevated={false}
-						className="rounded-3xl bg-slate-50 p-3 m-2"
-					>
+					<Card elevated={false} className="rounded-3xl p-3 m-2">
 						<SelectField
 							label="Subscription Category (optional)"
 							value={category}

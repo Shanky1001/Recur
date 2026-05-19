@@ -29,6 +29,7 @@ import {
 } from "@/src/state/appState";
 
 type CurrencyKey = "INR" | "USD" | "EUR" | "GBP";
+type ThemeMode = "system" | "light" | "dark";
 
 function Section({
 	title,
@@ -101,9 +102,7 @@ function Row({
 }
 
 function Divider() {
-	return (
-		<View style={{ height: 1, backgroundColor: "rgba(8, 17, 38, 0.08)" }} />
-	);
+	return <View className="h-px bg-border" />;
 }
 
 export default function ProfileScreen() {
@@ -124,6 +123,7 @@ export default function ProfileScreen() {
 	const notificationsEnabled = Boolean(
 		preferences.defaultReminderEnabled ?? true,
 	);
+	const themeMode = (preferences.themeMode ?? "system") as ThemeMode;
 	const [saving, setSaving] = useState(false);
 
 	const overview = useMemo(() => {
@@ -240,7 +240,7 @@ export default function ProfileScreen() {
 	};
 
 	return (
-		<SafeAreaView edges={["top"]} className="flex-1 bg-gray-100">
+		<SafeAreaView edges={["top"]} className="flex-1">
 			<ScrollView
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={{ paddingBottom: contentBottomPadding }}
@@ -253,6 +253,7 @@ export default function ProfileScreen() {
 
 				<View className="px-4 pt-4">
 					<Pressable
+						className="bg-white"
 						onPress={() => router.push("/edit-profile")}
 						hitSlop={10}
 						style={({ pressed }) => ({
@@ -375,8 +376,22 @@ export default function ProfileScreen() {
 					<Row
 						icon="color-palette-outline"
 						label="Theme"
-						subLabel="Coming later"
-						disabled
+						subLabel="System default with manual override"
+						right={
+							<PopoverSelect
+								value={themeMode}
+								options={[
+									{ key: "system", label: "System" },
+									{ key: "light", label: "Light" },
+									{ key: "dark", label: "Dark" },
+								]}
+								onChange={(next) => {
+									updatePreferences({
+										themeMode: next as ThemeMode,
+									});
+								}}
+							/>
+						}
 					/>
 				</Section>
 

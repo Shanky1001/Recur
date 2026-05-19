@@ -1,7 +1,12 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { router } from "expo-router";
+import { useColorScheme } from "nativewind";
 import React, { useMemo } from "react";
-import { Pressable, View } from "react-native";
+import {
+	Pressable,
+	View,
+	useColorScheme as useSystemColorScheme,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BOTTOM_TABS } from "@/src/constants/data";
@@ -20,6 +25,11 @@ export default function AppTabBar({
 	descriptors,
 	navigation,
 }: BottomTabBarProps) {
+	const { colorScheme } = useColorScheme();
+	const systemScheme = useSystemColorScheme();
+	const effectiveScheme =
+		colorScheme === "system" ? (systemScheme ?? "light") : colorScheme;
+	const isDark = effectiveScheme === "dark";
 	const insets = useSafeAreaInsets();
 
 	const orderedRoutes = useMemo(() => {
@@ -74,7 +84,16 @@ export default function AppTabBar({
 					<View
 						className={`tabs-pill ${isFocused ? "tabs-active" : ""}`}
 					>
-						{tabConfig.icon ?? null}
+						{getIcon(
+							tabConfig.icon.name,
+							tabConfig.icon.pack,
+							24,
+							isFocused
+								? "#ffffff"
+								: isDark
+									? "#cbd5e1"
+									: "#e2e8f0",
+						) ?? null}
 					</View>
 				</View>
 			</Pressable>
@@ -94,7 +113,7 @@ export default function AppTabBar({
 					bottom: tabbarBottom,
 					height: tabbar.height,
 					borderRadius: tabbar.radius,
-					backgroundColor: colors.primary,
+					backgroundColor: isDark ? "#0b1220" : colors.primary,
 					paddingHorizontal: 10,
 					flexDirection: "row",
 					alignItems: "center",
@@ -135,7 +154,7 @@ export default function AppTabBar({
 						width: PLUS_SIZE,
 						height: PLUS_SIZE,
 						borderRadius: PLUS_SIZE / 2,
-						backgroundColor: "white",
+						backgroundColor: isDark ? "#e2e8f0" : "white",
 						alignItems: "center",
 						justifyContent: "center",
 						opacity: pressed ? 0.85 : 1,
@@ -148,7 +167,12 @@ export default function AppTabBar({
 					accessibilityRole="button"
 					accessibilityLabel="Add"
 				>
-					{getIcon("add", "MaterialIcons", 36, "black")}
+					{getIcon(
+						"add",
+						"MaterialIcons",
+						36,
+						isDark ? "#0f172a" : "black",
+					)}
 				</Pressable>
 			</View>
 		</View>

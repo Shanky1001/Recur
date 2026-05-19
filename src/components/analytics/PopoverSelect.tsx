@@ -106,6 +106,7 @@ export default function PopoverSelect<T extends string>({
 
 							return (
 								<View
+									className="bg-white"
 									style={{
 										position: "absolute",
 										top,
@@ -115,7 +116,6 @@ export default function PopoverSelect<T extends string>({
 										borderWidth: StyleSheet.hairlineWidth,
 										borderColor: "rgba(8, 17, 38, 0.10)",
 										overflow: "hidden",
-										backgroundColor: "#fff",
 										shadowColor: "#eee",
 										shadowOpacity: 0.14,
 										shadowRadius: 18,
@@ -155,8 +155,6 @@ export default function PopoverSelect<T extends string>({
 													<View
 														style={{
 															height: StyleSheet.hairlineWidth,
-															backgroundColor:
-																"rgba(8, 17, 38, 0.10)",
 														}}
 													/>
 												) : null}

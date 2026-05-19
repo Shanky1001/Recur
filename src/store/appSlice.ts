@@ -10,6 +10,7 @@ export type PreferencesState = {
 	currency: string;
 	defaultReminderDaysBefore: number;
 	defaultReminderEnabled: boolean;
+	themeMode: "system" | "light" | "dark";
 	hasOnboarded: boolean;
 };
 
@@ -242,6 +243,7 @@ const initialState: AppState = {
 		currency: "INR",
 		defaultReminderDaysBefore: 3,
 		defaultReminderEnabled: true,
+		themeMode: "system",
 		hasOnboarded: false,
 	},
 	hydrated: false,
@@ -267,6 +269,7 @@ const appSlice = createSlice({
 						action.payload.preferences.defaultReminderDaysBefore,
 					defaultReminderEnabled:
 						action.payload.preferences.defaultReminderEnabled,
+					themeMode: action.payload.preferences.themeMode ?? "system",
 					hasOnboarded:
 						action.payload.preferences.hasOnboarded ?? false,
 				};
@@ -293,6 +296,7 @@ const appSlice = createSlice({
 						action.payload.preferences.defaultReminderDaysBefore,
 					defaultReminderEnabled:
 						action.payload.preferences.defaultReminderEnabled,
+					themeMode: action.payload.preferences.themeMode ?? "system",
 					hasOnboarded:
 						action.payload.preferences.hasOnboarded ?? false,
 				};

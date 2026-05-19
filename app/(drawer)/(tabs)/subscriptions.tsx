@@ -55,7 +55,11 @@ export default function SubscriptionsScreen() {
 					hitSlop={10}
 					className="size-11 items-center justify-center rounded-full border border-border bg-white"
 				>
-					<Ionicons name="add" size={24} color="#081126" />
+					<Ionicons
+						name="add"
+						size={24}
+						className="text-foreground"
+					/>
 				</Pressable>
 			</View>
 

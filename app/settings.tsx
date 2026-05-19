@@ -16,9 +16,7 @@ import Card from "@/src/components/ui/Card";
 import { useAppActions, useAppState } from "@/src/state/appState";
 
 function Divider() {
-	return (
-		<View style={{ height: 1, backgroundColor: "rgba(8, 17, 38, 0.08)" }} />
-	);
+	return <View className="h-px bg-border" />;
 }
 
 function Section({
@@ -203,7 +201,10 @@ export default function SettingsScreen() {
 	};
 
 	return (
-		<View className="flex-1 bg-gray-100" style={{ paddingTop: insets.top }}>
+		<View
+			className="flex-1 bg-background"
+			style={{ paddingTop: insets.top }}
+		>
 			<View className="px-4 pb-3 pt-2">
 				<View className="flex-row items-center">
 					<Pressable onPress={() => router.back()} hitSlop={10}>

@@ -47,6 +47,7 @@ export type AppState = {
 		currency: string;
 		defaultReminderDaysBefore: number;
 		defaultReminderEnabled: boolean;
+		themeMode: "system" | "light" | "dark";
 		hasOnboarded: boolean;
 	};
 };
@@ -129,6 +130,7 @@ export function useAppActions() {
 				currency?: string;
 				defaultReminderDaysBefore?: number;
 				defaultReminderEnabled?: boolean;
+				themeMode?: "system" | "light" | "dark";
 				hasOnboarded?: boolean;
 			}) => {
 				await dispatch(updatePreferences(partial)).unwrap();

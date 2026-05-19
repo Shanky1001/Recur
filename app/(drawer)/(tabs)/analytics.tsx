@@ -208,7 +208,7 @@ const Analytics = () => {
 	}, [activeSubs]);
 
 	return (
-		<SafeAreaView edges={["top"]} className="flex-1 bg-gray-100">
+		<SafeAreaView edges={["top"]} className="flex-1 bg-background">
 			<ScrollView
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={{ paddingBottom: contentBottomPadding }}

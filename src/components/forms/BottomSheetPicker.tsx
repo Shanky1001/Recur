@@ -1,3 +1,4 @@
+import { usePreferences } from "@/src/state/appState";
 import BottomSheet, {
 	BottomSheetBackdrop,
 	BottomSheetFlatList,
@@ -28,6 +29,7 @@ export default function BottomSheetPicker<T extends string>({
 	onSelect,
 	onClose,
 }: BottomSheetPickerProps<T>) {
+	const { themeMode } = usePreferences();
 	const renderBackdrop = useCallback(
 		(props: any) => (
 			<BottomSheetBackdrop
@@ -50,11 +52,13 @@ export default function BottomSheetPicker<T extends string>({
 			backdropComponent={renderBackdrop}
 			onClose={onClose}
 			backgroundStyle={{
-				backgroundColor: "white",
+				backgroundColor: themeMode === "dark" ? "#1f2937" : "white",
 				borderTopLeftRadius: 24,
 				borderTopRightRadius: 24,
 			}}
-			handleIndicatorStyle={{ backgroundColor: "#cbd5e1" }}
+			handleIndicatorStyle={{
+				backgroundColor: themeMode === "dark" ? "#4b5563" : "#cbd5e1",
+			}}
 		>
 			<View className="px-5 pb-3">
 				<Text className="text-base font-poppins-bold text-foreground">

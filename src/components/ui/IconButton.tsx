@@ -41,7 +41,7 @@ export default function IconButton({
 			]}
 		>
 			<View
-				className="items-center justify-center rounded-full bg-white"
+				className="items-center justify-center rounded-full bg-card"
 				style={{ width: size, height: size }}
 			>
 				{icon}

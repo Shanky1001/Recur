@@ -25,7 +25,7 @@ export default function Card({
 }: CardProps) {
 	return (
 		<View
-			className={`rounded-3xl bg-white ${className ?? ""}`}
+			className={`rounded-3xl bg-card ${className ?? ""}`}
 			style={[elevated ? elevatedShadow : null, style]}
 		>
 			{children}

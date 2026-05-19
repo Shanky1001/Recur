@@ -15,6 +15,7 @@ export type Preferences = {
 	currency: string; // e.g. INR, USD
 	defaultReminderDaysBefore: number;
 	defaultReminderEnabled: boolean;
+	themeMode?: "system" | "light" | "dark";
 	hasOnboarded?: boolean;
 	updatedAt?: string; // UTC ISO
 };

@@ -4,8 +4,14 @@ import BottomSheet, {
 	type BottomSheetHandleProps,
 } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
+import { useColorScheme } from "nativewind";
 import React, { useCallback, useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import {
+	Pressable,
+	Text,
+	View,
+	useColorScheme as useSystemColorScheme,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import CategoryChips from "@/src/components/subscriptions/CategoryChips";
@@ -29,6 +35,11 @@ function Handle(_props: BottomSheetHandleProps) {
 export default function SubscriptionsBottomSheet({
 	subscriptions,
 }: SubscriptionsBottomSheetProps) {
+	const { colorScheme } = useColorScheme();
+	const systemScheme = useSystemColorScheme();
+	const effectiveScheme =
+		colorScheme === "system" ? (systemScheme ?? "light") : colorScheme;
+	const isDark = effectiveScheme === "dark";
 	const insets = useSafeAreaInsets();
 	const contentBottomPadding = useTabBarContentPadding(16);
 	const [selectedCategory, setSelectedCategory] = useState("All");
@@ -138,8 +149,8 @@ export default function SubscriptionsBottomSheet({
 							onPress={() => setSelectedCategory("All")}
 							className={
 								isEmptyAll
-									? "mt-3 rounded-2xl border border-border bg-white px-4 py-4"
-									: "rounded-2xl border border-border bg-white px-4 py-4"
+									? "mt-3 rounded-2xl border border-border bg-card px-4 py-4"
+									: "rounded-2xl border border-border bg-card px-4 py-4"
 							}
 							style={({ pressed }) => ({
 								opacity: pressed ? 0.9 : 1,
@@ -165,7 +176,7 @@ export default function SubscriptionsBottomSheet({
 			enablePanDownToClose={false}
 			handleComponent={Handle}
 			backgroundStyle={{
-				backgroundColor: "white",
+				backgroundColor: isDark ? "#111827" : "#ffffff",
 				borderTopLeftRadius: 28,
 				borderTopRightRadius: 28,
 			}}

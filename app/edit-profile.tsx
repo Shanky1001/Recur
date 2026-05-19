@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
 	Alert,
 	Image,
@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Card from "@/src/components/ui/Card";
 import { useAppActions, useUser } from "@/src/state/appState";
+import { getPresetAvatarUrls } from "@/src/utils/helper";
 
 function PrimaryButton({
 	label,
@@ -55,7 +56,7 @@ function SecondaryButton({
 		<Pressable
 			onPress={onPress}
 			hitSlop={10}
-			className="rounded-2xl border border-border bg-white px-4 py-4"
+			className="rounded-2xl border border-border bg-card px-4 py-4"
 			style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1 })}
 		>
 			<Text className="text-center text-base font-poppins-semibold text-foreground">
@@ -65,18 +66,11 @@ function SecondaryButton({
 	);
 }
 
+const presetAvatars = getPresetAvatarUrls();
 export default function EditProfileScreen() {
 	const insets = useSafeAreaInsets();
 	const user = useUser();
 	const { updateUserProfile } = useAppActions();
-
-	const presetAvatars = useMemo(
-		() =>
-			[8, 12, 15, 18, 24, 32].map(
-				(n) => `https://i.pravatar.cc/150?img=${n}`,
-			),
-		[],
-	);
 
 	const [name, setName] = useState(user.name ?? "");
 	const [avatarUri, setAvatarUri] = useState(
@@ -125,10 +119,14 @@ export default function EditProfileScreen() {
 	};
 
 	return (
-		<View className="flex-1 bg-gray-100" style={{ paddingTop: insets.top }}>
+		<View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
 			<View className="flex-row items-center px-4 py-3">
 				<Pressable onPress={() => router.back()} hitSlop={10}>
-					<Ionicons name="chevron-back" size={26} color="#0f172a" />
+					<Ionicons
+						name="chevron-back"
+						size={26}
+						className="text-foreground"
+					/>
 				</Pressable>
 				<Text className="ml-2 text-2xl font-poppins-bold text-foreground">
 					Edit Profile
@@ -162,7 +160,7 @@ export default function EditProfileScreen() {
 									onChangeText={setName}
 									placeholder="What should we call you?"
 									placeholderTextColor="#94a3b8"
-									className="mt-2 rounded-2xl border border-border bg-white px-4 py-3 text-base font-poppins-semibold"
+									className="mt-2 rounded-2xl border border-border bg-card px-4 py-3 text-base font-poppins-semibold text-foreground"
 								/>
 							</View>
 						</View>

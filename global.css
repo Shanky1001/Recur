@@ -7,7 +7,7 @@
 @theme {
 	--color-background: #fff9e3;
 	--color-foreground: #081126;
-	--color-card: #fff9e3;
+	--color-card: #ffffff;
 	--color-muted: #081126;
 	--color-muted-foreground: rgba(0, 0, 0, 0.6);
 	--color-primary: #fbbf24;
@@ -44,6 +44,52 @@
 	--font-poppins-light: Poppins-Light;
 }
 
+@layer base {
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--color-background: #0b1220;
+			--color-foreground: #f8fafc;
+			--color-card: #111827;
+			--color-muted: #cbd5e1;
+			--color-muted-foreground: rgba(248, 250, 252, 0.72);
+			--color-primary: #fbbf24;
+			--color-accent: #60a5fa;
+			--color-border: rgba(148, 163, 184, 0.3);
+			--color-success: #22c55e;
+			--color-destructive: #f87171;
+			--color-subscription: #60a5fa;
+		}
+	}
+
+	.dark {
+		--color-background: #0b1220;
+		--color-foreground: #f8fafc;
+		--color-card: #111827;
+		--color-muted: #cbd5e1;
+		--color-muted-foreground: rgba(248, 250, 252, 0.72);
+		--color-primary: #fbbf24;
+		--color-accent: #60a5fa;
+		--color-border: rgba(148, 163, 184, 0.3);
+		--color-success: #22c55e;
+		--color-destructive: #f87171;
+		--color-subscription: #60a5fa;
+	}
+
+	.light {
+		--color-background: #ffffff;
+		--color-foreground: #081126;
+		--color-card: #ffffff;
+		--color-muted: #081126;
+		--color-muted-foreground: rgba(0, 0, 0, 0.6);
+		--color-primary: #fbbf24;
+		--color-accent: #3d5afe;
+		--color-border: rgba(0, 0, 0, 0.1);
+		--color-success: #22c55e;
+		--color-destructive: #ef4444;
+		--color-subscription: #3b82f6;
+	}
+}
+
 @layer components {
 	/* Custom styles for components can be added here */
 
@@ -61,5 +107,30 @@
 
 	.tabs-glyph {
 		@apply size-6;
+	}
+}
+
+@layer utilities {
+	/* Make legacy hardcoded utility colors theme-aware */
+	.bg-white {
+		background-color: var(--color-card) !important;
+	}
+
+	.bg-gray-100 {
+		background-color: var(--color-background) !important;
+	}
+
+	.border-slate-100,
+	.border-slate-200,
+	.border-slate-300 {
+		border-color: var(--color-border) !important;
+	}
+
+	.text-slate-500,
+	.text-slate-600,
+	.text-slate-700,
+	.text-slate-800,
+	.text-slate-900 {
+		color: var(--color-foreground) !important;
 	}
 }

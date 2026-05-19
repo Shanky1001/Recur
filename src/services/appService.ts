@@ -48,6 +48,7 @@ function defaultPreferences(): Preferences {
 		currency: "INR",
 		defaultReminderDaysBefore: 3,
 		defaultReminderEnabled: true,
+		themeMode: "system",
 		hasOnboarded: false,
 		updatedAt: nowIsoUtc(),
 	};

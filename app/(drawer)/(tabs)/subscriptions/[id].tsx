@@ -207,7 +207,7 @@ export default function SubscriptionDetailsScreen() {
 						<Ionicons
 							name="chevron-back"
 							size={26}
-							color="#081126"
+							className="text-foreground"
 						/>
 					</Pressable>
 					<Text className="mt-4 text-2xl font-poppins-bold text-foreground">
@@ -312,7 +312,11 @@ export default function SubscriptionDetailsScreen() {
 					hitSlop={10}
 					className="size-11 items-center justify-center rounded-full border border-border bg-white"
 				>
-					<Ionicons name="chevron-back" size={22} color="#081126" />
+					<Ionicons
+						name="chevron-back"
+						size={22}
+						className="text-foreground"
+					/>
 				</Pressable>
 				<Text className="ml-4 flex-1 text-xl font-poppins-bold text-foreground">
 					Subscription Details
@@ -326,7 +330,7 @@ export default function SubscriptionDetailsScreen() {
 					<Ionicons
 						name="ellipsis-vertical"
 						size={20}
-						color="#081126"
+						className="text-foreground"
 					/>
 				</Pressable>
 			</View>
@@ -494,7 +498,6 @@ export default function SubscriptionDetailsScreen() {
 							>
 								<View
 									style={{
-										backgroundColor: "white",
 										borderRadius: 16,
 										overflow: "hidden",
 										shadowColor: "#000",
@@ -503,6 +506,7 @@ export default function SubscriptionDetailsScreen() {
 										shadowOffset: { width: 0, height: 8 },
 										elevation: 12,
 									}}
+									className="bg-white"
 								>
 									<Pressable
 										onPress={() => {
@@ -518,7 +522,7 @@ export default function SubscriptionDetailsScreen() {
 										<Ionicons
 											name="swap-horizontal"
 											size={20}
-											color="#081126"
+											className="text-foreground"
 										/>
 										<Text className="ml-3 text-base font-poppins-semibold text-foreground">
 											Change Plan
@@ -544,7 +548,7 @@ export default function SubscriptionDetailsScreen() {
 										<Ionicons
 											name="pause-circle"
 											size={20}
-											color="#081126"
+											className="text-foreground"
 										/>
 										<Text className="ml-3 text-base font-poppins-semibold text-foreground">
 											{subscription.status === "cancelled"

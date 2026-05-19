@@ -26,14 +26,14 @@ export default function CategoryChips({
 						onPress={() => onSelect(category)}
 						className={
 							isSelected
-								? "rounded-xl bg-foreground px-5 py-3"
+								? "rounded-xl bg-foreground px-5 py-3 border border-border"
 								: "rounded-xl border border-border bg-white px-5 py-3"
 						}
 					>
 						<Text
 							className={
 								isSelected
-									? "text-base font-poppins-medium text-white"
+									? "text-base font-poppins-medium text-background"
 									: "text-base font-poppins-medium text-foreground"
 							}
 						>

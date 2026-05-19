@@ -1,5 +1,5 @@
 import type React from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 
 import SubscriptionStatusPill from "@/src/components/subscriptions/SubscriptionStatusPill";
 import Card from "@/src/components/ui/Card";
@@ -33,7 +33,6 @@ export default function SubscriptionCard({
 	subscription: Subscription;
 	onPress?: () => void;
 }) {
-	const dividerStyle = styles.divider;
 	const content = (
 		<View>
 			<View className="flex-row items-center justify-between">
@@ -46,8 +45,8 @@ export default function SubscriptionCard({
 								resizeMode="contain"
 							/>
 						) : (
-							<View className="size-12 items-center justify-center rounded-xl bg-foreground">
-								<Text className="text-lg font-poppins-bold text-white">
+							<View className="size-12 items-center justify-center rounded-xl bg-white">
+								<Text className="text-lg font-poppins-bold text-foreground">
 									{subscription.name
 										.slice(0, 1)
 										.toUpperCase()}
@@ -62,7 +61,7 @@ export default function SubscriptionCard({
 				<SubscriptionStatusPill status={subscription.status} />
 			</View>
 
-			<View className="mt-4" style={dividerStyle} />
+			<View className="mt-4 h-px bg-border" />
 
 			<View className="mt-4 flex-row justify-between">
 				<View className="flex-1 pr-4">
@@ -119,10 +118,3 @@ export default function SubscriptionCard({
 		</Pressable>
 	);
 }
-
-const styles = StyleSheet.create({
-	divider: {
-		height: StyleSheet.hairlineWidth,
-		backgroundColor: "rgba(8, 17, 38, 0.12)",
-	},
-});

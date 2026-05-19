@@ -3,8 +3,14 @@ import BottomSheet, {
 	BottomSheetBackdrop,
 	BottomSheetView,
 } from "@gorhom/bottom-sheet";
+import { useColorScheme } from "nativewind";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import { Pressable, Text, View } from "react-native";
+import {
+	Pressable,
+	Text,
+	View,
+	useColorScheme as useSystemColorScheme,
+} from "react-native";
 
 import type { Notification } from "@/src/data/dummy";
 
@@ -28,6 +34,11 @@ export default function NotificationActionsSheet({
 	actions,
 	onClose,
 }: NotificationActionsSheetProps) {
+	const { colorScheme } = useColorScheme();
+	const systemScheme = useSystemColorScheme();
+	const effectiveScheme =
+		colorScheme === "system" ? (systemScheme ?? "light") : colorScheme;
+	const isDark = effectiveScheme === "dark";
 	const sheetRef = useRef<BottomSheet>(null);
 	const snapPoints = useMemo(() => ["38%"], []);
 
@@ -60,11 +71,13 @@ export default function NotificationActionsSheet({
 			backdropComponent={renderBackdrop}
 			onClose={onClose}
 			backgroundStyle={{
-				backgroundColor: "white",
+				backgroundColor: isDark ? "#111827" : "#fff9e3",
 				borderTopLeftRadius: 24,
 				borderTopRightRadius: 24,
 			}}
-			handleIndicatorStyle={{ backgroundColor: "#cbd5e1" }}
+			handleIndicatorStyle={{
+				backgroundColor: isDark ? "#64748b" : "#cbd5e1",
+			}}
 		>
 			<BottomSheetView className="px-5 pb-5">
 				<View className="pb-3">
@@ -86,7 +99,7 @@ export default function NotificationActionsSheet({
 								key={action.key}
 								onPress={action.onPress}
 								className={
-									"flex-row items-center rounded-2xl border border-border bg-white px-4 py-3"
+									"flex-row items-center rounded-2xl border border-border bg-card px-4 py-3"
 								}
 								style={({ pressed }) => ({
 									opacity: pressed ? 0.85 : 1,
