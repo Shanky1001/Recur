@@ -1,3 +1,5 @@
+import type { BillingCycle } from "@/src/utils/billingCycle";
+
 export type NotificationJobType = "renewalReminder";
 
 // Persisted mapping between our domain + the OS scheduled notification id.
@@ -14,6 +16,7 @@ export type NotificationJob = {
 export type Preferences = {
 	currency: string; // e.g. INR, USD
 	defaultReminderDaysBefore: number;
+	defaultReminderTime?: string; // HH:mm local
 	defaultReminderEnabled: boolean;
 	themeMode?: "system" | "light" | "dark";
 	hasOnboarded?: boolean;
@@ -30,7 +33,7 @@ export type ServiceCatalogItem = {
 	name: string;
 	logoUri?: string;
 	plans: string[];
-	defaultCycle: "Monthly" | "Yearly";
+	defaultCycle: BillingCycle;
 	defaultCost: number;
 	defaultCategory: string;
 	defaultStatus: "active" | "trial";

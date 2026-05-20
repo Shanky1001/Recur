@@ -70,6 +70,7 @@ export async function initSqlite(): Promise<void> {
 				paymentMethod TEXT,
 				reminderEnabled INTEGER,
 				reminderDaysBefore INTEGER,
+				reminderTime TEXT,
 				startDate TEXT,
 				nextPaymentDate TEXT NOT NULL,
 				logoUri TEXT,
@@ -99,6 +100,7 @@ export async function initSqlite(): Promise<void> {
 				id INTEGER PRIMARY KEY NOT NULL CHECK (id = 1),
 				currency TEXT NOT NULL,
 				defaultReminderDaysBefore INTEGER NOT NULL,
+				defaultReminderTime TEXT NOT NULL DEFAULT '09:00',
 				defaultReminderEnabled INTEGER NOT NULL,
 				themeMode TEXT NOT NULL DEFAULT 'system',
 				hasOnboarded INTEGER NOT NULL DEFAULT 0,
@@ -124,16 +126,6 @@ export async function initSqlite(): Promise<void> {
 				updatedAt TEXT NOT NULL
 			);
 		`);
-
-		const preferenceCols = await d.getAllAsync<{ name: string }>(
-			"PRAGMA table_info(preferences)",
-		);
-		const hasThemeMode = preferenceCols.some((c) => c.name === "themeMode");
-		if (!hasThemeMode) {
-			await d.runAsync(
-				"ALTER TABLE preferences ADD COLUMN themeMode TEXT NOT NULL DEFAULT 'system'",
-			);
-		}
 	})();
 
 	return initPromise;
@@ -167,6 +159,7 @@ export async function loadSubscriptions(): Promise<Subscription[]> {
 			r.reminderDaysBefore == null
 				? undefined
 				: Number(r.reminderDaysBefore),
+		reminderTime: r.reminderTime ?? undefined,
 		startDate: r.startDate == null ? undefined : String(r.startDate),
 		nextPaymentDate: String(r.nextPaymentDate),
 		logoUri: r.logoUri ?? undefined,
@@ -187,9 +180,9 @@ export async function upsertSubscription(sub: Subscription): Promise<void> {
 	await d.runAsync(
 		`INSERT INTO subscriptions (
 			id, name, category, status, planName, pricePerMonth, currencySymbol,
-			billingCycle, pricePerBillingCycle, paymentMethod, reminderEnabled, reminderDaysBefore,
+			billingCycle, pricePerBillingCycle, paymentMethod, reminderEnabled, reminderDaysBefore, reminderTime,
 			startDate, nextPaymentDate, logoUri, createdAt
-		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id) DO UPDATE SET
 			name=excluded.name,
 			category=excluded.category,
@@ -202,6 +195,7 @@ export async function upsertSubscription(sub: Subscription): Promise<void> {
 			paymentMethod=excluded.paymentMethod,
 			reminderEnabled=excluded.reminderEnabled,
 			reminderDaysBefore=excluded.reminderDaysBefore,
+			reminderTime=excluded.reminderTime,
 			startDate=excluded.startDate,
 			nextPaymentDate=excluded.nextPaymentDate,
 			logoUri=excluded.logoUri
@@ -219,6 +213,7 @@ export async function upsertSubscription(sub: Subscription): Promise<void> {
 			sub.paymentMethod ?? null,
 			sub.reminderEnabled == null ? null : sub.reminderEnabled ? 1 : 0,
 			sub.reminderDaysBefore ?? null,
+			sub.reminderTime ?? null,
 			startDate ?? null,
 			sub.nextPaymentDate,
 			sub.logoUri ?? null,
@@ -432,6 +427,10 @@ export async function loadPreferences(): Promise<Preferences | null> {
 	return {
 		currency: String(r.currency),
 		defaultReminderDaysBefore: Number(r.defaultReminderDaysBefore),
+		defaultReminderTime:
+			r.defaultReminderTime == null
+				? undefined
+				: String(r.defaultReminderTime),
 		defaultReminderEnabled: Boolean(r.defaultReminderEnabled),
 		themeMode:
 			r.themeMode === "light" || r.themeMode === "dark"
@@ -448,11 +447,12 @@ export async function upsertPreferences(p: Preferences): Promise<void> {
 	if (!d) return;
 	const updatedAt = p.updatedAt ?? nowIsoUtc();
 	await d.runAsync(
-		`INSERT INTO preferences (id, currency, defaultReminderDaysBefore, defaultReminderEnabled, themeMode, hasOnboarded, updatedAt)
-		VALUES (1, ?, ?, ?, ?, ?, ?)
+		`INSERT INTO preferences (id, currency, defaultReminderDaysBefore, defaultReminderTime, defaultReminderEnabled, themeMode, hasOnboarded, updatedAt)
+		VALUES (1, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			currency=excluded.currency,
 			defaultReminderDaysBefore=excluded.defaultReminderDaysBefore,
+			defaultReminderTime=excluded.defaultReminderTime,
 			defaultReminderEnabled=excluded.defaultReminderEnabled,
 			themeMode=excluded.themeMode,
 			hasOnboarded=excluded.hasOnboarded,
@@ -461,6 +461,7 @@ export async function upsertPreferences(p: Preferences): Promise<void> {
 		[
 			p.currency,
 			Math.round(p.defaultReminderDaysBefore),
+			p.defaultReminderTime ?? "09:00",
 			p.defaultReminderEnabled ? 1 : 0,
 			p.themeMode === "light" || p.themeMode === "dark"
 				? p.themeMode

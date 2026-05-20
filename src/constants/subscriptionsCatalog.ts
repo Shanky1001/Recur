@@ -1,5 +1,8 @@
-export const BILLING_CYCLES = ["Monthly", "Yearly"] as const;
-export type BillingCycle = (typeof BILLING_CYCLES)[number];
+import type { BillingCycle } from "@/src/utils/billingCycle";
+import { BILLING_CYCLE_OPTIONS } from "@/src/utils/billingCycle";
+
+export const BILLING_CYCLES = BILLING_CYCLE_OPTIONS;
+export type { BillingCycle };
 
 export const PAYMENT_METHODS = [
 	"PhonePe Autopay",
@@ -24,7 +27,7 @@ export type ServiceConfig = {
 	name: string;
 	logoUri?: string;
 	plans: readonly string[];
-	defaultCycle: BillingCycle;
+	defaultCycle: BillingCycle; // catalog default; user can pick any cycle when adding
 	defaultCost: number;
 	defaultCategory: string;
 	defaultStatus: "active" | "trial";

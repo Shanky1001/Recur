@@ -15,16 +15,31 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import PopoverSelect from "@/src/components/analytics/PopoverSelect";
+import TimeField from "@/src/components/forms/TimeField";
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import SubscriptionStatusPill from "@/src/components/subscriptions/SubscriptionStatusPill";
 import Card from "@/src/components/ui/Card";
 import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
-import { useAppActions, useSubscriptions } from "@/src/state/appState";
+import {
+	useAppActions,
+	usePreferences,
+	useSubscriptions,
+} from "@/src/state/appState";
+import {
+	billingCycleLabel,
+	billingCycleShortSuffix,
+	maxReminderDaysBefore,
+} from "@/src/utils/billingCycle";
 import {
 	formatCurrency,
 	formatDateLong,
 	parseIsoLike,
 } from "@/src/utils/helper";
+import {
+	formatReminderTimeDisplay,
+	normalizeReminderDaysBefore,
+} from "@/src/utils/reminderSchedule";
 import { computeNextRenewalIso } from "@/src/utils/renewal";
 
 function Section({
@@ -155,6 +170,7 @@ export default function SubscriptionDetailsScreen() {
 	const contentBottomPadding = useTabBarContentPadding(24);
 	const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
 	const subscriptions = useSubscriptions();
+	const preferences = usePreferences();
 	const { cancelSubscription, deleteSubscription, upsertSubscription } =
 		useAppActions();
 	const [saving, setSaving] = useState(false);
@@ -196,6 +212,30 @@ export default function SubscriptionDetailsScreen() {
 		[subscription],
 	);
 
+	const maxLeadDays = subscription
+		? maxReminderDaysBefore(subscription.billingCycle)
+		: 28;
+	const reminderDaysBefore = subscription
+		? normalizeReminderDaysBefore(
+				subscription,
+				subscription.reminderDaysBefore ??
+					preferences.defaultReminderDaysBefore ??
+					3,
+			)
+		: 3;
+	const leadDayOptions = useMemo(() => {
+		const candidates = [1, 2, 3, 5, 7, 14, 28].filter((d) => d <= maxLeadDays);
+		if (!candidates.includes(reminderDaysBefore)) {
+			candidates.push(reminderDaysBefore);
+		}
+		return [...new Set(candidates)]
+			.sort((a, b) => a - b)
+			.map((d) => ({
+				key: String(d),
+				label: d === 1 ? "1 day" : `${d} days`,
+			}));
+	}, [maxLeadDays, reminderDaysBefore]);
+
 	if (!subscription) {
 		return (
 			<View
@@ -222,19 +262,35 @@ export default function SubscriptionDetailsScreen() {
 	}
 
 	const reminderEnabled = subscription.reminderEnabled ?? true;
-	const reminderDaysBefore = subscription.reminderDaysBefore ?? 3;
+	const reminderTime =
+		subscription.reminderTime ??
+		preferences.defaultReminderTime ??
+		"09:00";
 
-	const onToggleReminder = async (next: boolean) => {
+	const persistReminder = async (
+		partial: Partial<
+			Pick<
+				Subscription,
+				"reminderEnabled" | "reminderDaysBefore" | "reminderTime"
+			>
+		>,
+	) => {
 		setSaving(true);
 		try {
 			await upsertSubscription({
 				...subscription,
-				reminderEnabled: next,
+				reminderEnabled,
 				reminderDaysBefore,
+				reminderTime,
+				...partial,
 			});
 		} finally {
 			setSaving(false);
 		}
+	};
+
+	const onToggleReminder = async (next: boolean) => {
+		await persistReminder({ reminderEnabled: next });
 	};
 
 	const onCancel = () => {
@@ -294,15 +350,10 @@ export default function SubscriptionDetailsScreen() {
 		});
 	};
 
-	const billingCycleLabel = subscription.billingCycle ?? "Monthly";
+	const cycleLabel = billingCycleLabel(subscription.billingCycle);
 	const costPerCycle =
 		subscription.pricePerBillingCycle ?? subscription.pricePerMonth;
-	const costSuffix =
-		subscription.billingCycle === "Yearly"
-			? "yr"
-			: subscription.billingCycle === "Weekly"
-				? "wk"
-				: "month";
+	const costSuffix = billingCycleShortSuffix(subscription.billingCycle);
 
 	return (
 		<View className="flex-1 bg-gray-100" style={{ paddingTop: insets.top }}>
@@ -387,8 +438,9 @@ export default function SubscriptionDetailsScreen() {
 								Reminder
 							</Text>
 							<Text className="mt-1 text-xs font-poppins-medium text-foreground/60">
-								Get notified {reminderDaysBefore} days before
-								renewal
+								{reminderEnabled
+									? `${reminderDaysBefore} day${reminderDaysBefore === 1 ? "" : "s"} before ${cycleLabel.toLowerCase()} renewal at ${formatReminderTimeDisplay(reminderTime)}`
+									: "Renewal reminders off"}
 							</Text>
 						</View>
 						<Switch
@@ -397,6 +449,32 @@ export default function SubscriptionDetailsScreen() {
 							onValueChange={onToggleReminder}
 						/>
 					</View>
+					{reminderEnabled ? (
+						<View className="mt-4 border-t border-border pt-4">
+							<View className="flex-row items-center justify-between">
+								<Text className="text-sm font-poppins-semibold text-foreground">
+									Lead time
+								</Text>
+								<PopoverSelect
+									value={String(reminderDaysBefore)}
+									options={leadDayOptions}
+									onChange={(next) => {
+										void persistReminder({
+											reminderDaysBefore: Number(next),
+										});
+									}}
+								/>
+							</View>
+							<TimeField
+								label="Notification time"
+								subLabel="Local time on your device"
+								value={reminderTime}
+								onChange={(next) => {
+									void persistReminder({ reminderTime: next });
+								}}
+							/>
+						</View>
+					) : null}
 				</Card>
 
 				<Section title="Plan Details">
@@ -406,7 +484,7 @@ export default function SubscriptionDetailsScreen() {
 				</Section>
 
 				<Section title="Billing Details">
-					<Row label="Billing Cycle" value={billingCycleLabel} />
+					<Row label="Billing Cycle" value={cycleLabel} />
 					<Row
 						label="Cost per billing cycle"
 						value={`${formatCurrency(costPerCycle, subscription.currencySymbol)}/${costSuffix}`}

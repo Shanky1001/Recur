@@ -1,4 +1,5 @@
-import type { BillingCycle } from "@/src/constants/subscriptionsCatalog";
+import type { BillingCycle } from "@/src/utils/billingCycle";
+import { addBillingCycle } from "@/src/utils/billingCycle";
 
 export function pad2(value: number): string {
 	return String(value).padStart(2, "0");
@@ -66,23 +67,9 @@ export function addDays(days: number): string {
 	return date.toISOString().slice(0, 10);
 }
 
+/** Next renewal from today, advancing one billing period for the given cycle. */
 export function nextPaymentByCycle(cycle: BillingCycle): string {
-	if (cycle === "Yearly") return addDays(365);
-	return addDays(30);
-}
-
-function addCycle(date: Date, cycle: BillingCycle | "Weekly"): Date {
-	const d = new Date(date);
-	if (cycle === "Weekly") {
-		d.setDate(d.getDate() + 7);
-		return d;
-	}
-	if (cycle === "Yearly") {
-		d.setFullYear(d.getFullYear() + 1);
-		return d;
-	}
-	d.setMonth(d.getMonth() + 1);
-	return d;
+	return addBillingCycle(new Date(), cycle, 1).toISOString();
 }
 
 export function nextPaymentFromStartDate(
@@ -93,9 +80,9 @@ export function nextPaymentFromStartDate(
 	const start = parseIsoLike(startDate);
 	if (!start) return null;
 
-	let next = addCycle(start, cycle);
+	let next = addBillingCycle(start, cycle, 1);
 	while (next.getTime() <= now.getTime()) {
-		next = addCycle(next, cycle);
+		next = addBillingCycle(next, cycle, 1);
 	}
 
 	return next.toISOString();
@@ -106,6 +93,9 @@ export function monthlyPrice(
 	pricePerCycle: number,
 ): number {
 	if (cycle === "Yearly") return Math.round(pricePerCycle / 12);
+	if (cycle === "HalfYearly") return Math.round(pricePerCycle / 6);
+	if (cycle === "Quarterly") return Math.round(pricePerCycle / 3);
+	if (cycle === "Weekly") return Math.round((pricePerCycle * 52) / 12);
 	return Math.round(pricePerCycle);
 }
 

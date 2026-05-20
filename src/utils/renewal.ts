@@ -1,28 +1,12 @@
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
+import { addBillingCycle } from "@/src/utils/billingCycle";
 import { parseIsoLike } from "@/src/utils/helper";
-
-function addCycle(
-	date: Date,
-	cycle: Subscription["billingCycle"],
-	dir: 1 | -1,
-): Date {
-	const d = new Date(date);
-	const c = cycle ?? "Monthly";
-	if (c === "Yearly") {
-		d.setFullYear(d.getFullYear() + dir);
-		return d;
-	}
-	if (c === "Weekly") {
-		d.setDate(d.getDate() + dir * 7);
-		return d;
-	}
-	d.setMonth(d.getMonth() + dir);
-	return d;
-}
 
 function maxWindowDays(cycle: Subscription["billingCycle"]): number {
 	const c = cycle ?? "Monthly";
 	if (c === "Weekly") return 14;
+	if (c === "Quarterly") return 120;
+	if (c === "HalfYearly") return 220;
 	if (c === "Yearly") return 400;
 	return 62;
 }
@@ -44,18 +28,18 @@ export function computeNextRenewalIso(
 	// If it's in the past, roll forward.
 	let guard = 0;
 	while (target.getTime() < now.getTime() && guard < 400) {
-		target = addCycle(target, cycle, 1);
+		target = addBillingCycle(target, cycle, 1);
 		guard++;
 	}
 
 	// If it's too far in the future for the cycle, pull it back by whole cycles.
 	guard = 0;
 	while (target.getTime() - now.getTime() > windowMs && guard < 400) {
-		target = addCycle(target, cycle, -1);
+		target = addBillingCycle(target, cycle, -1);
 		guard++;
 		// Ensure we don't end up in the past.
 		if (target.getTime() < now.getTime()) {
-			target = addCycle(target, cycle, 1);
+			target = addBillingCycle(target, cycle, 1);
 			break;
 		}
 	}

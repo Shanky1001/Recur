@@ -25,10 +25,8 @@ import {
 	type PaymentMethod,
 } from "@/src/constants/subscriptionsCatalog";
 import { useAppActions, useSubscriptions } from "@/src/state/appState";
-
-function computePricePerMonth(cycle: BillingCycle, pricePerCycle: number) {
-	return cycle === "Yearly" ? Math.round(pricePerCycle / 12) : pricePerCycle;
-}
+import { monthlyPrice } from "@/src/utils/helper";
+import { addBillingCycle } from "@/src/utils/billingCycle";
 
 export default function EditSubscriptionScreen() {
 	const insets = useSafeAreaInsets();
@@ -133,10 +131,7 @@ export default function EditSubscriptionScreen() {
 				billingCycle,
 				startDate: startDate.trim(),
 				pricePerBillingCycle,
-				pricePerMonth: computePricePerMonth(
-					billingCycle,
-					pricePerBillingCycle,
-				),
+				pricePerMonth: monthlyPrice(billingCycle, pricePerBillingCycle),
 				paymentMethod,
 			});
 			router.back();

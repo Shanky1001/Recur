@@ -46,6 +46,7 @@ export type AppState = {
 	preferences: {
 		currency: string;
 		defaultReminderDaysBefore: number;
+		defaultReminderTime: string;
 		defaultReminderEnabled: boolean;
 		themeMode: "system" | "light" | "dark";
 		hasOnboarded: boolean;
@@ -129,6 +130,7 @@ export function useAppActions() {
 			updatePreferences: async (partial: {
 				currency?: string;
 				defaultReminderDaysBefore?: number;
+				defaultReminderTime?: string;
 				defaultReminderEnabled?: boolean;
 				themeMode?: "system" | "light" | "dark";
 				hasOnboarded?: boolean;

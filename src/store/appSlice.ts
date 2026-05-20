@@ -9,6 +9,7 @@ import { parseIsoLike } from "@/src/utils/helper";
 export type PreferencesState = {
 	currency: string;
 	defaultReminderDaysBefore: number;
+	defaultReminderTime: string;
 	defaultReminderEnabled: boolean;
 	themeMode: "system" | "light" | "dark";
 	hasOnboarded: boolean;
@@ -242,6 +243,7 @@ const initialState: AppState = {
 	preferences: {
 		currency: "INR",
 		defaultReminderDaysBefore: 3,
+		defaultReminderTime: "09:00",
 		defaultReminderEnabled: true,
 		themeMode: "system",
 		hasOnboarded: false,
@@ -267,6 +269,9 @@ const appSlice = createSlice({
 					currency: action.payload.preferences.currency,
 					defaultReminderDaysBefore:
 						action.payload.preferences.defaultReminderDaysBefore,
+					defaultReminderTime:
+						action.payload.preferences.defaultReminderTime ??
+						"09:00",
 					defaultReminderEnabled:
 						action.payload.preferences.defaultReminderEnabled,
 					themeMode: action.payload.preferences.themeMode ?? "system",
@@ -294,6 +299,9 @@ const appSlice = createSlice({
 					currency: action.payload.preferences.currency,
 					defaultReminderDaysBefore:
 						action.payload.preferences.defaultReminderDaysBefore,
+					defaultReminderTime:
+						action.payload.preferences.defaultReminderTime ??
+						"09:00",
 					defaultReminderEnabled:
 						action.payload.preferences.defaultReminderEnabled,
 					themeMode: action.payload.preferences.themeMode ?? "system",

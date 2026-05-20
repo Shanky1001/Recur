@@ -14,6 +14,11 @@ import type {
 } from "@/src/repository/models";
 import { sqliteAppRepository } from "@/src/repository/sqliteAppRepository";
 import { nextPaymentFromStartDate } from "@/src/utils/helper";
+import {
+	DEFAULT_REMINDER_TIME,
+	normalizeReminderDaysBefore,
+	normalizeReminderTime,
+} from "@/src/utils/reminderSchedule";
 
 export type AppService = {
 	hydrate: () => Promise<HydratedData>;
@@ -47,6 +52,7 @@ function defaultPreferences(): Preferences {
 	return {
 		currency: "INR",
 		defaultReminderDaysBefore: 3,
+		defaultReminderTime: DEFAULT_REMINDER_TIME,
 		defaultReminderEnabled: true,
 		themeMode: "system",
 		hasOnboarded: false,
@@ -169,9 +175,19 @@ export function createAppService(
 		updatePreferences: async (preferences: Preferences) => {
 			const next: Preferences = {
 				...preferences,
+				defaultReminderTime: normalizeReminderTime(
+					preferences.defaultReminderTime,
+				),
 				updatedAt: nowIsoUtc(),
 			};
 			await repository.upsertPreferences(next);
+			try {
+				const subscriptions = await repository.loadSubscriptions();
+				await notificationEngine.bootstrap();
+				await notificationEngine.syncForSubscriptions(subscriptions);
+			} catch {
+				// best-effort resync when reminder defaults change
+			}
 			return next;
 		},
 		updateUserProfile: async (profile: UserProfile) => {
@@ -221,7 +237,7 @@ export function createAppService(
 							subscription.billingCycle,
 						)
 					: null;
-			const next: Subscription = {
+			const withDefaults: Subscription = {
 				...subscription,
 				createdAt,
 				startDate,
@@ -233,6 +249,18 @@ export function createAppService(
 				reminderDaysBefore:
 					subscription.reminderDaysBefore ??
 					prefs.defaultReminderDaysBefore,
+				reminderTime:
+					subscription.reminderTime ??
+					prefs.defaultReminderTime ??
+					DEFAULT_REMINDER_TIME,
+			};
+			const next: Subscription = {
+				...withDefaults,
+				reminderTime: normalizeReminderTime(withDefaults.reminderTime),
+				reminderDaysBefore: normalizeReminderDaysBefore(
+					withDefaults,
+					withDefaults.reminderDaysBefore,
+				),
 			};
 			await repository.upsertSubscription(next);
 			await notificationEngine.onSubscriptionUpserted(next);

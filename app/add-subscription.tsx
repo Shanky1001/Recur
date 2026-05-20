@@ -37,15 +37,10 @@ import {
 } from "@/src/state/appState";
 import { router } from "expo-router";
 
-function addBillingCycle(date: Date, cycle: BillingCycle): Date {
-	const d = new Date(date);
-	if (cycle === "Yearly") {
-		d.setFullYear(d.getFullYear() + 1);
-		return d;
-	}
-	d.setMonth(d.getMonth() + 1);
-	return d;
-}
+import TimeField from "@/src/components/forms/TimeField";
+import { addBillingCycle } from "@/src/utils/billingCycle";
+import { monthlyPrice } from "@/src/utils/helper";
+import { formatReminderTimeDisplay } from "@/src/utils/reminderSchedule";
 
 export default function AddSubscriptionScreen() {
 	const insets = useSafeAreaInsets();
@@ -84,6 +79,9 @@ export default function AddSubscriptionScreen() {
 	>(PAYMENT_METHODS[0]);
 	const [reminderEnabled, setReminderEnabled] = useState(
 		Boolean(preferences.defaultReminderEnabled ?? true),
+	);
+	const [reminderTime, setReminderTime] = useState(
+		preferences.defaultReminderTime ?? "09:00",
 	);
 	const [category, setCategory] = useState<string>(
 		serviceConfig.defaultCategory ?? "Other",
@@ -149,12 +147,10 @@ export default function AddSubscriptionScreen() {
 		const nextPaymentDate = addBillingCycle(
 			new Date(startDate),
 			billingCycle,
+			1,
 		).toISOString();
 		const pricePerBillingCycle = Math.round(parsedCost);
-		const pricePerMonth =
-			billingCycle === "Yearly"
-				? Math.round(parsedCost / 12)
-				: pricePerBillingCycle;
+		const pricePerMonth = monthlyPrice(billingCycle, pricePerBillingCycle);
 
 		await addSubscription({
 			id,
@@ -169,6 +165,7 @@ export default function AddSubscriptionScreen() {
 			paymentMethod,
 			reminderEnabled,
 			reminderDaysBefore: preferences.defaultReminderDaysBefore ?? 3,
+			reminderTime,
 			startDate: startDate.trim(),
 			nextPaymentDate,
 			logoUri: serviceConfig.logoUri,
@@ -402,7 +399,9 @@ export default function AddSubscriptionScreen() {
 									Reminder
 								</Text>
 								<Text className="mt-1 text-xs font-poppins-medium text-foreground/60">
-									Get notified 3 days before renewal
+									{reminderEnabled
+										? `${preferences.defaultReminderDaysBefore ?? 3} days before renewal at ${formatReminderTimeDisplay(reminderTime)}`
+										: "Renewal reminders off"}
 								</Text>
 							</View>
 							<Switch
@@ -410,6 +409,14 @@ export default function AddSubscriptionScreen() {
 								onValueChange={setReminderEnabled}
 							/>
 						</View>
+						{reminderEnabled ? (
+							<TimeField
+								label="Reminder time"
+								subLabel="Local time on your device"
+								value={reminderTime}
+								onChange={setReminderTime}
+							/>
+						) : null}
 					</Card>
 
 					<Card elevated={false} className="rounded-3xl p-3 m-2">

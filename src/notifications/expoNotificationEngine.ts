@@ -3,8 +3,12 @@ import { Platform } from "react-native";
 import type { Subscription } from "@/src/components/subscriptions/SubscriptionCard";
 import type { Notification } from "@/src/data/dummy";
 import type { AppRepository } from "@/src/repository/appRepository";
-import type { NotificationJob } from "@/src/repository/models";
-import { parseIsoLike } from "@/src/utils/helper";
+import type { NotificationJob, Preferences } from "@/src/repository/models";
+import {
+	buildRenewalReminderTrigger,
+	normalizeReminderDaysBefore,
+	renewalInstant,
+} from "@/src/utils/reminderSchedule";
 
 import type { NotificationEngine, SnoozeArgs, SnoozeResult } from "./types";
 
@@ -21,43 +25,29 @@ function addHours(iso: string, hours: number): string {
 
 const IST_TIME_ZONE = "Asia/Kolkata";
 
-function subtractDaysIst(date: Date, days: number): Date {
-	return new Date(date.getTime() - days * 24 * 60 * 60 * 1000);
-}
-
-function reminderDaysBefore(subscription: Subscription): number {
-	const raw = subscription.reminderDaysBefore ?? 3;
-	if (!Number.isFinite(raw)) return 3;
-	return Math.max(0, Math.round(raw));
-}
-
-function buildRenewalTrigger(subscription: Subscription): Date | null {
-	const next = parseIsoLike(subscription.nextPaymentDate);
-	if (!next) return null;
-	const daysBefore = reminderDaysBefore(subscription);
-	const enabled = subscription.reminderEnabled ?? true;
-	if (!enabled) return null;
-	if (subscription.status === "cancelled") return null;
-
-	const trigger = subtractDaysIst(next, daysBefore);
-	if (Number.isNaN(trigger.getTime())) return null;
-	return trigger;
-}
-
 function jobId(subscriptionId: string): string {
 	return `${subscriptionId}:renewalReminder`;
 }
 
-function reminderStartMs(subscription: Subscription): number | null {
-	const trigger = buildRenewalTrigger(subscription);
+function reminderStartMs(
+	subscription: Subscription,
+	preferences: Preferences | null,
+): number | null {
+	const trigger = buildRenewalReminderTrigger({
+		subscription,
+		preferences,
+	});
 	if (!trigger) return null;
 	return trigger.getTime();
 }
 
-function reminderEndMs(subscription: Subscription): number | null {
-	const next = parseIsoLike(subscription.nextPaymentDate);
-	if (!next) return null;
-	return next.getTime();
+function reminderEndMs(
+	subscription: Subscription,
+	preferences: Preferences | null,
+): number | null {
+	const end = renewalInstant(subscription, preferences);
+	if (!end) return null;
+	return end.getTime();
 }
 
 function buildReminderContent(subscription: Subscription) {
@@ -102,6 +92,7 @@ export function createExpoNotificationEngine(
 	type ScheduleContext = {
 		notificationIds?: Set<string>;
 		jobBySubscriptionId?: Map<string, NotificationJob | null>;
+		preferences?: Preferences | null;
 	};
 
 	let bootstrapped = false;
@@ -299,6 +290,14 @@ export function createExpoNotificationEngine(
 		return false;
 	}
 
+	async function loadPreferencesSafe(): Promise<Preferences | null> {
+		try {
+			return await repository.loadPreferences();
+		} catch {
+			return null;
+		}
+	}
+
 	async function scheduleRenewalReminder(
 		subscription: Subscription,
 		ctx?: ScheduleContext,
@@ -306,8 +305,17 @@ export function createExpoNotificationEngine(
 		const Notifications = await getExpoNotifications();
 		if (!Notifications) return;
 
+		const preferences =
+			ctx?.preferences !== undefined
+				? ctx.preferences
+				: await loadPreferencesSafe();
+
 		const enabled = subscription.reminderEnabled ?? true;
-		if (!enabled || subscription.status === "cancelled") {
+		if (
+			!enabled ||
+			subscription.status === "cancelled" ||
+			subscription.status === "paused"
+		) {
 			const existing = await getExistingJob(subscription.id, ctx);
 			if (existing) {
 				await cancelJob(existing);
@@ -317,8 +325,8 @@ export function createExpoNotificationEngine(
 		}
 
 		const nowMs = Date.now();
-		const startMs = reminderStartMs(subscription);
-		const endMs = reminderEndMs(subscription);
+		const startMs = reminderStartMs(subscription, preferences);
+		const endMs = reminderEndMs(subscription, preferences);
 		if (startMs == null || endMs == null) {
 			const existing = await getExistingJob(subscription.id, ctx);
 			if (existing) {
@@ -421,7 +429,10 @@ export function createExpoNotificationEngine(
 			return;
 		}
 
-		let triggerDate = buildRenewalTrigger(subscription);
+		let triggerDate = buildRenewalReminderTrigger({
+			subscription,
+			preferences,
+		});
 		if (!triggerDate) {
 			const existing = await getExistingJob(subscription.id, ctx);
 			if (existing) {
@@ -502,9 +513,11 @@ export function createExpoNotificationEngine(
 		},
 		syncForSubscriptions: async (subscriptions) => {
 			await ensureBootstrapped();
+			const preferences = await loadPreferencesSafe();
 			const ctx: ScheduleContext = {
 				notificationIds: new Set<string>(),
 				jobBySubscriptionId: new Map<string, NotificationJob | null>(),
+				preferences,
 			};
 			try {
 				const allNotifications = await repository.loadNotifications();

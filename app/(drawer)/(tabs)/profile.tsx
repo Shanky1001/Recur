@@ -15,7 +15,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import PopoverSelect from "@/src/components/analytics/PopoverSelect";
+import TimeField from "@/src/components/forms/TimeField";
 import Card from "@/src/components/ui/Card";
+import { formatReminderTimeDisplay } from "@/src/utils/reminderSchedule";
 import { CurrencyOptions } from "@/src/data/dummy";
 import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
 import {
@@ -120,6 +122,7 @@ export default function ProfileScreen() {
 	const reminderDaysBefore = String(
 		preferences.defaultReminderDaysBefore ?? 3,
 	) as "1" | "2" | "3" | "5" | "7";
+	const reminderTime = preferences.defaultReminderTime ?? "09:00";
 	const notificationsEnabled = Boolean(
 		preferences.defaultReminderEnabled ?? true,
 	);
@@ -171,6 +174,36 @@ export default function ProfileScreen() {
 		} catch {
 			Alert.alert("Export failed", "Could not export data.");
 		}
+	};
+
+	const applyReminderTimeToAll = (time: string) => {
+		if (saving) return;
+		Alert.alert(
+			"Apply reminder time",
+			`Set reminder time to ${formatReminderTimeDisplay(time)} for all active subscriptions?`,
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Apply",
+					onPress: async () => {
+						setSaving(true);
+						try {
+							const targets = subscriptions.filter(
+								(s) => s.status !== "cancelled",
+							);
+							for (const s of targets) {
+								await upsertSubscription({
+									...s,
+									reminderTime: time,
+								});
+							}
+						} finally {
+							setSaving(false);
+						}
+					},
+				},
+			],
+		);
 	};
 
 	const applyReminderTimingToAll = (days: number) => {
@@ -338,8 +371,8 @@ export default function ProfileScreen() {
 					<Divider />
 					<Row
 						icon="time-outline"
-						label="Reminder timing"
-						subLabel="Days before renewal"
+						label="Reminder lead time"
+						subLabel="Days before renewal (capped per billing cycle)"
 						right={
 							<PopoverSelect
 								value={reminderDaysBefore}
@@ -359,6 +392,17 @@ export default function ProfileScreen() {
 							/>
 						}
 					/>
+					<View className="px-4 pb-2">
+						<TimeField
+							label="Reminder time"
+							subLabel={`Default: ${formatReminderTimeDisplay(reminderTime)} — applies to new subscriptions`}
+							value={reminderTime}
+							onChange={(next) => {
+								updatePreferences({ defaultReminderTime: next });
+								applyReminderTimeToAll(next);
+							}}
+						/>
+					</View>
 					<Divider />
 					<Row
 						icon="notifications-outline"
