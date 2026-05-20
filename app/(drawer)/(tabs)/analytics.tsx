@@ -12,7 +12,11 @@ import type { Subscription } from "@/src/components/subscriptions/SubscriptionCa
 import Card from "@/src/components/ui/Card";
 import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
 import { useSubscriptions } from "@/src/state/appState";
-import { formatDateLong, parseIsoLike } from "@/src/utils/helper";
+import {
+	formatDateLong,
+	parseIsoLike,
+	spendForPeriod,
+} from "@/src/utils/helper";
 import { computeNextRenewalIso } from "@/src/utils/renewal";
 
 type Period = "Monthly" | "Yearly";
@@ -30,16 +34,7 @@ const PALETTE = [
 function costForPeriod(period: Period, sub: Subscription): number {
 	const cycle = sub.billingCycle ?? "Monthly";
 	const perCycle = sub.pricePerBillingCycle ?? sub.pricePerMonth;
-	if (!Number.isFinite(perCycle)) return 0;
-	if (period === "Monthly") {
-		if (cycle === "Yearly") return perCycle / 12;
-		if (cycle === "Weekly") return perCycle * 4.345;
-		return perCycle;
-	}
-	// Yearly
-	if (cycle === "Yearly") return perCycle;
-	if (cycle === "Weekly") return perCycle * 52;
-	return perCycle * 12;
+	return spendForPeriod(period, cycle, perCycle);
 }
 
 function formatCompact(amount: number) {

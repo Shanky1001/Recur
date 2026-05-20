@@ -20,6 +20,7 @@ import Card from "@/src/components/ui/Card";
 import { formatReminderTimeDisplay } from "@/src/utils/reminderSchedule";
 import { CurrencyOptions } from "@/src/data/dummy";
 import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
+import type { ThemeMode } from "@/src/hooks/useEffectiveColorScheme";
 import {
 	useAppActions,
 	useAppState,
@@ -31,7 +32,6 @@ import {
 } from "@/src/state/appState";
 
 type CurrencyKey = "INR" | "USD" | "EUR" | "GBP";
-type ThemeMode = "system" | "light" | "dark";
 
 function Section({
 	title,

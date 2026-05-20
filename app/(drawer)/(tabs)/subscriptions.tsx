@@ -38,7 +38,7 @@ export default function SubscriptionsScreen() {
 	}, [subscriptions, selectedCategory, status]);
 
 	return (
-		<View className="flex-1 bg-gray-100" style={{ paddingTop: insets.top }}>
+		<View className="flex-1" style={{ paddingTop: insets.top }}>
 			<View className="flex-row items-center justify-between px-4 py-3">
 				<View>
 					<Text className="text-2xl font-poppins-bold text-foreground">

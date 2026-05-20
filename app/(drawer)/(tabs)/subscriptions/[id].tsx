@@ -27,6 +27,7 @@ import {
 	useSubscriptions,
 } from "@/src/state/appState";
 import {
+	addBillingCycle,
 	billingCycleLabel,
 	billingCycleShortSuffix,
 	maxReminderDaysBefore,
@@ -89,40 +90,6 @@ const styles = StyleSheet.create({
 	},
 });
 
-function subtractBillingCycle(
-	date: Date,
-	cycle: Subscription["billingCycle"],
-): Date {
-	const d = new Date(date);
-	if (cycle === "Yearly") {
-		d.setFullYear(d.getFullYear() - 1);
-		return d;
-	}
-	if (cycle === "Weekly") {
-		d.setDate(d.getDate() - 7);
-		return d;
-	}
-	d.setMonth(d.getMonth() - 1);
-	return d;
-}
-
-function addBillingCycle(
-	date: Date,
-	cycle: Subscription["billingCycle"],
-): Date {
-	const d = new Date(date);
-	if (cycle === "Yearly") {
-		d.setFullYear(d.getFullYear() + 1);
-		return d;
-	}
-	if (cycle === "Weekly") {
-		d.setDate(d.getDate() + 7);
-		return d;
-	}
-	d.setMonth(d.getMonth() + 1);
-	return d;
-}
-
 function buildDeductions(
 	subscription: Subscription,
 ): { amount: string; date: string }[] {
@@ -143,23 +110,23 @@ function buildDeductions(
 	if (!next) return [];
 
 	// First possible deduction happens after 1 full cycle since createdAt.
-	const firstDeduction = addBillingCycle(startedAt, cycle);
+	const firstDeduction = addBillingCycle(startedAt, cycle, 1);
 	const now = new Date();
 
 	// Start from the last payment date (one cycle before next).
-	let cursor = subtractBillingCycle(next, cycle);
+	let cursor = addBillingCycle(next, cycle, -1);
 	const out: { amount: string; date: string }[] = [];
 	let guard = 0;
 	while (guard < 24) {
 		guard++;
 		if (cursor.getTime() < firstDeduction.getTime()) break;
 		if (cursor.getTime() > now.getTime()) {
-			cursor = subtractBillingCycle(cursor, cycle);
+			cursor = addBillingCycle(cursor, cycle, -1);
 			continue;
 		}
 		out.push({ amount, date: formatDateLong(cursor.toISOString()) });
 		if (out.length >= 6) break;
-		cursor = subtractBillingCycle(cursor, cycle);
+		cursor = addBillingCycle(cursor, cycle, -1);
 	}
 
 	return out;
@@ -356,7 +323,7 @@ export default function SubscriptionDetailsScreen() {
 	const costSuffix = billingCycleShortSuffix(subscription.billingCycle);
 
 	return (
-		<View className="flex-1 bg-gray-100" style={{ paddingTop: insets.top }}>
+		<View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
 			<View className="flex-row items-center px-4 py-3">
 				<Pressable
 					onPress={onBack}

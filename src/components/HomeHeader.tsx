@@ -1,12 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useColorScheme } from "nativewind";
 import type React from "react";
-import {
-	Image,
-	Text,
-	View,
-	useColorScheme as useSystemColorScheme,
-} from "react-native";
+import { Image, Text, View } from "react-native";
 
 import IconButton from "@/src/components/ui/IconButton";
 
@@ -25,11 +19,6 @@ export default function HomeHeader({
 	onPressNotifications,
 	onPressMenu,
 }: HomeHeaderProps) {
-	const { colorScheme } = useColorScheme();
-	const systemScheme = useSystemColorScheme();
-	const effectiveScheme =
-		colorScheme === "system" ? (systemScheme ?? "light") : colorScheme;
-	const iconColor = effectiveScheme === "dark" ? "#f8fafc" : "#081126";
 
 	return (
 		<View className="flex-row items-center justify-between px-5 pb-4 pt-2">
@@ -56,7 +45,7 @@ export default function HomeHeader({
 						<Ionicons
 							name="notifications-outline"
 							size={22}
-							color={iconColor}
+							className="text-foreground"
 						/>
 					}
 				/>
@@ -65,7 +54,7 @@ export default function HomeHeader({
 					<IconButton
 						onPress={onPressMenu}
 						icon={
-							<Ionicons name="menu" size={22} color={iconColor} />
+							<Ionicons name="menu" size={22} className="text-foreground" />
 						}
 					/>
 				)}

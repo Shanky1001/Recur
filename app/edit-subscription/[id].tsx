@@ -26,7 +26,6 @@ import {
 } from "@/src/constants/subscriptionsCatalog";
 import { useAppActions, useSubscriptions } from "@/src/state/appState";
 import { monthlyPrice } from "@/src/utils/helper";
-import { addBillingCycle } from "@/src/utils/billingCycle";
 
 export default function EditSubscriptionScreen() {
 	const insets = useSafeAreaInsets();
@@ -161,10 +160,10 @@ export default function EditSubscriptionScreen() {
 
 			<ScrollView
 				showsVerticalScrollIndicator={false}
-				className="bg-gray-100"
+				className="bg-white"
 				contentContainerStyle={{ paddingBottom: 120 }}
 			>
-				<Card elevated={false} className="rounded-3xl  p-3 m-2">
+				<Card elevated={true} className="rounded-3xl border border-border p-3 m-2">
 					<View className="pb-4">
 						<Text className="text-sm font-poppins-bold text-foreground">
 							Subscription
@@ -195,7 +194,7 @@ export default function EditSubscriptionScreen() {
 					</View>
 				</Card>
 
-				<Card elevated={false} className="rounded-3xl p-3 m-2">
+				<Card elevated={true} className="rounded-3xl border border-border p-3 m-2">
 					<SelectField
 						label="Billing Cycle"
 						value={billingCycle}

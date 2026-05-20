@@ -1,11 +1,11 @@
 import React from "react";
 
 import AppTabBar from "@/src/components/navigation/AppTabBar";
-import { usePreferences } from "@/src/state/appState";
+import { useEffectiveColorScheme } from "@/src/hooks/useEffectiveColorScheme";
 import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
-	const { themeMode } = usePreferences();
+	const effectiveScheme = useEffectiveColorScheme();
 	return (
 		<Tabs
 			screenOptions={{
@@ -13,7 +13,7 @@ export default function TabsLayout() {
 				tabBarShowLabel: false,
 				sceneStyle: {
 					backgroundColor:
-						themeMode === "dark" ? "#0b1220" : "#ffffff",
+						effectiveScheme === "dark" ? "#0b1220" : "#ffffff",
 				},
 			}}
 			tabBar={(props) => <AppTabBar {...props} />}

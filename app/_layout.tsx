@@ -1,34 +1,21 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import { useColorScheme } from "nativewind";
 import { useEffect } from "react";
-import {
-	StatusBar,
-	useColorScheme as useSystemColorScheme,
-} from "react-native";
+import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 
-import { AppStateProvider, usePreferences } from "@/src/state/appState";
+import {
+	useApplyThemeMode,
+	useEffectiveColorScheme,
+} from "@/src/hooks/useEffectiveColorScheme";
+import { AppStateProvider } from "@/src/state/appState";
 
 SplashScreen.preventAutoHideAsync();
 
 function ThemeController() {
-	const preferences = usePreferences();
-	const { setColorScheme } = useColorScheme();
-	const systemScheme = useSystemColorScheme();
-
-	const preferredMode =
-		preferences.themeMode === "light" || preferences.themeMode === "dark"
-			? preferences.themeMode
-			: "system";
-
-	useEffect(() => {
-		setColorScheme(preferredMode);
-	}, [preferredMode, setColorScheme]);
-
-	const effectiveScheme =
-		preferredMode === "system" ? (systemScheme ?? "light") : preferredMode;
+	useApplyThemeMode();
+	const effectiveScheme = useEffectiveColorScheme();
 
 	return (
 		<StatusBar

@@ -4,20 +4,15 @@ import BottomSheet, {
 	type BottomSheetHandleProps,
 } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
-import { useColorScheme } from "nativewind";
 import React, { useCallback, useMemo, useState } from "react";
-import {
-	Pressable,
-	Text,
-	View,
-	useColorScheme as useSystemColorScheme,
-} from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import CategoryChips from "@/src/components/subscriptions/CategoryChips";
 import SubscriptionCard, {
 	type Subscription,
 } from "@/src/components/subscriptions/SubscriptionCard";
+import { useEffectiveColorScheme } from "@/src/hooks/useEffectiveColorScheme";
 import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
 
 export type SubscriptionsBottomSheetProps = {
@@ -35,11 +30,7 @@ function Handle(_props: BottomSheetHandleProps) {
 export default function SubscriptionsBottomSheet({
 	subscriptions,
 }: SubscriptionsBottomSheetProps) {
-	const { colorScheme } = useColorScheme();
-	const systemScheme = useSystemColorScheme();
-	const effectiveScheme =
-		colorScheme === "system" ? (systemScheme ?? "light") : colorScheme;
-	const isDark = effectiveScheme === "dark";
+	const isDark = useEffectiveColorScheme() === "dark";
 	const insets = useSafeAreaInsets();
 	const contentBottomPadding = useTabBarContentPadding(16);
 	const [selectedCategory, setSelectedCategory] = useState("All");

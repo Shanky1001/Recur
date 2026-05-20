@@ -1,17 +1,13 @@
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { router } from "expo-router";
-import { useColorScheme } from "nativewind";
 import React, { useMemo } from "react";
-import {
-	Pressable,
-	View,
-	useColorScheme as useSystemColorScheme,
-} from "react-native";
+import { Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BOTTOM_TABS } from "@/src/constants/data";
 import { getIcon } from "@/src/constants/icons";
 import { theme } from "@/src/constants/theme";
+import { useEffectiveColorScheme } from "@/src/hooks/useEffectiveColorScheme";
 
 const {
 	components: { tabbar },
@@ -25,11 +21,7 @@ export default function AppTabBar({
 	descriptors,
 	navigation,
 }: BottomTabBarProps) {
-	const { colorScheme } = useColorScheme();
-	const systemScheme = useSystemColorScheme();
-	const effectiveScheme =
-		colorScheme === "system" ? (systemScheme ?? "light") : colorScheme;
-	const isDark = effectiveScheme === "dark";
+	const isDark = useEffectiveColorScheme() === "dark";
 	const insets = useSafeAreaInsets();
 
 	const orderedRoutes = useMemo(() => {

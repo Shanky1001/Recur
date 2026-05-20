@@ -3,16 +3,11 @@ import BottomSheet, {
 	BottomSheetBackdrop,
 	BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { useColorScheme } from "nativewind";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
-import {
-	Pressable,
-	Text,
-	View,
-	useColorScheme as useSystemColorScheme,
-} from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import type { Notification } from "@/src/data/dummy";
+import { useEffectiveColorScheme } from "@/src/hooks/useEffectiveColorScheme";
 
 export type NotificationAction = {
 	key: string;
@@ -34,11 +29,7 @@ export default function NotificationActionsSheet({
 	actions,
 	onClose,
 }: NotificationActionsSheetProps) {
-	const { colorScheme } = useColorScheme();
-	const systemScheme = useSystemColorScheme();
-	const effectiveScheme =
-		colorScheme === "system" ? (systemScheme ?? "light") : colorScheme;
-	const isDark = effectiveScheme === "dark";
+	const isDark = useEffectiveColorScheme() === "dark";
 	const sheetRef = useRef<BottomSheet>(null);
 	const snapPoints = useMemo(() => ["38%"], []);
 

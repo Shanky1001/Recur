@@ -23,7 +23,8 @@ import {
 export type AppService = {
 	hydrate: () => Promise<HydratedData>;
 	resetLocalData: () => Promise<HydratedData>;
-	resyncReminders: (subscriptions: Subscription[]) => Promise<void>;
+	resyncReminders: (subscriptions: Subscription[]) => Promise<Notification[]>;
+	reloadNotifications: () => Promise<Notification[]>;
 	updatePreferences: (preferences: Preferences) => Promise<Preferences>;
 	updateUserProfile: (profile: UserProfile) => Promise<UserProfile>;
 	upsertService: (service: ServiceCatalogItem) => Promise<ServiceCatalogItem>;
@@ -112,10 +113,7 @@ export function createAppService(
 				await repository.upsertPreferences(preferences);
 			}
 			await ensureSeedServices(repository);
-			const [subscriptions, notifications] = await Promise.all([
-				repository.loadSubscriptions(),
-				repository.loadNotifications(),
-			]);
+			const subscriptions = await repository.loadSubscriptions();
 			const services = await repository.loadServices();
 			try {
 				await notificationEngine.bootstrap();
@@ -123,6 +121,7 @@ export function createAppService(
 			} catch {
 				// Notifications are best-effort; never block app startup.
 			}
+			const notifications = await repository.loadNotifications();
 			return {
 				user,
 				subscriptions,
@@ -146,16 +145,14 @@ export function createAppService(
 			const preferences = defaultPreferences();
 			await repository.upsertPreferences(preferences);
 			await ensureSeedServices(repository);
-			const [subscriptions, notifications] = await Promise.all([
-				repository.loadSubscriptions(),
-				repository.loadNotifications(),
-			]);
+			const subscriptions = await repository.loadSubscriptions();
 			const services = await repository.loadServices();
 			try {
 				await notificationEngine.syncForSubscriptions(subscriptions);
 			} catch {
 				// ignore
 			}
+			const notifications = await repository.loadNotifications();
 			return {
 				user,
 				subscriptions,
@@ -171,6 +168,10 @@ export function createAppService(
 			} catch {
 				// best-effort
 			}
+			return await repository.loadNotifications();
+		},
+		reloadNotifications: async () => {
+			return await repository.loadNotifications();
 		},
 		updatePreferences: async (preferences: Preferences) => {
 			const next: Preferences = {
@@ -275,6 +276,12 @@ export function createAppService(
 			await notificationEngine.onSubscriptionDeleted(id);
 		},
 		clearAllNotifications: async () => {
+			try {
+				await notificationEngine.bootstrap();
+				await notificationEngine.clearAllScheduled();
+			} catch {
+				// best-effort
+			}
 			await repository.clearNotifications();
 		},
 		markAllNotificationsRead: async () => {

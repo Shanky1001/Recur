@@ -49,6 +49,7 @@ export type AppState = {
 	services: ServiceConfig[];
 	preferences: PreferencesState;
 	hydrated: boolean;
+	hydrateError: string | null;
 };
 
 function deriveDashboard(
@@ -128,7 +129,9 @@ export const updateUserProfile = createAsyncThunk(
 export const addSubscription = createAsyncThunk(
 	"subscriptions/add",
 	async (subscription: Subscription) => {
-		return await appService.upsertSubscription(subscription);
+		const saved = await appService.upsertSubscription(subscription);
+		const notifications = await appService.reloadNotifications();
+		return { subscription: saved, notifications };
 	},
 );
 
@@ -153,7 +156,9 @@ export const deleteService = createAsyncThunk(
 export const upsertSubscription = createAsyncThunk(
 	"subscriptions/upsert",
 	async (subscription: Subscription) => {
-		return await appService.upsertSubscription(subscription);
+		const saved = await appService.upsertSubscription(subscription);
+		const notifications = await appService.reloadNotifications();
+		return { subscription: saved, notifications };
 	},
 );
 
@@ -161,7 +166,8 @@ export const cancelSubscription = createAsyncThunk(
 	"subscriptions/cancel",
 	async (id: string) => {
 		await appService.cancelSubscription(id);
-		return id;
+		const notifications = await appService.reloadNotifications();
+		return { id, notifications };
 	},
 );
 
@@ -169,7 +175,8 @@ export const deleteSubscription = createAsyncThunk(
 	"subscriptions/delete",
 	async (id: string) => {
 		await appService.deleteSubscription(id);
-		return id;
+		const notifications = await appService.reloadNotifications();
+		return { id, notifications };
 	},
 );
 
@@ -185,8 +192,10 @@ export const resyncReminders = createAsyncThunk(
 	"notifications/resyncReminders",
 	async (_, { getState }) => {
 		const state = getState() as { app: AppState };
-		await appService.resyncReminders(state.app.subscriptions);
-		return true;
+		const notifications = await appService.resyncReminders(
+			state.app.subscriptions,
+		);
+		return notifications;
 	},
 );
 
@@ -249,6 +258,7 @@ const initialState: AppState = {
 		hasOnboarded: false,
 	},
 	hydrated: false,
+	hydrateError: null,
 };
 
 const appSlice = createSlice({
@@ -257,7 +267,16 @@ const appSlice = createSlice({
 	reducers: {},
 	extraReducers: (builder) => {
 		builder
+			.addCase(hydrateApp.pending, (state) => {
+				state.hydrateError = null;
+			})
+			.addCase(hydrateApp.rejected, (state, action) => {
+				state.hydrated = false;
+				state.hydrateError =
+					action.error.message ?? "Failed to load app data";
+			})
 			.addCase(hydrateApp.fulfilled, (state, action) => {
+				state.hydrateError = null;
 				state.user = {
 					name: action.payload.user.name,
 					avatarUri: action.payload.user.avatarUri,
@@ -288,6 +307,7 @@ const appSlice = createSlice({
 				state.hydrated = true;
 			})
 			.addCase(resetLocalData.fulfilled, (state, action) => {
+				state.hydrateError = null;
 				state.user = {
 					name: action.payload.user.name,
 					avatarUri: action.payload.user.avatarUri,
@@ -327,7 +347,11 @@ const appSlice = createSlice({
 				state.user = action.payload;
 			})
 			.addCase(addSubscription.fulfilled, (state, action) => {
-				state.subscriptions = [action.payload, ...state.subscriptions];
+				state.subscriptions = [
+					action.payload.subscription,
+					...state.subscriptions,
+				];
+				state.notifications = action.payload.notifications;
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,
@@ -335,14 +359,21 @@ const appSlice = createSlice({
 			})
 			.addCase(upsertSubscription.fulfilled, (state, action) => {
 				const idx = state.subscriptions.findIndex(
-					(s) => s.id === action.payload.id,
+					(s) => s.id === action.payload.subscription.id,
 				);
-				if (idx >= 0) state.subscriptions[idx] = action.payload;
-				else state.subscriptions.unshift(action.payload);
+				if (idx >= 0) {
+					state.subscriptions[idx] = action.payload.subscription;
+				} else {
+					state.subscriptions.unshift(action.payload.subscription);
+				}
+				state.notifications = action.payload.notifications;
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,
 				);
+			})
+			.addCase(resyncReminders.fulfilled, (state, action) => {
+				state.notifications = action.payload;
 			})
 			.addCase(upsertService.fulfilled, (state, action) => {
 				const idx = state.services.findIndex(
@@ -362,11 +393,12 @@ const appSlice = createSlice({
 			})
 			.addCase(cancelSubscription.fulfilled, (state, action) => {
 				for (const sub of state.subscriptions) {
-					if (sub.id === action.payload) {
+					if (sub.id === action.payload.id) {
 						sub.status = "cancelled";
 						break;
 					}
 				}
+				state.notifications = action.payload.notifications;
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,
@@ -374,8 +406,9 @@ const appSlice = createSlice({
 			})
 			.addCase(deleteSubscription.fulfilled, (state, action) => {
 				state.subscriptions = state.subscriptions.filter(
-					(s) => s.id !== action.payload,
+					(s) => s.id !== action.payload.id,
 				);
+				state.notifications = action.payload.notifications;
 				state.dashboard = deriveDashboard(
 					state.dashboard,
 					state.subscriptions,

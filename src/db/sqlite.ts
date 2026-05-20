@@ -9,6 +9,18 @@ import type {
 	ServiceCatalogItem,
 	UserProfile,
 } from "@/src/repository/models";
+import {
+	BILLING_CYCLE_OPTIONS,
+	type BillingCycle,
+} from "@/src/utils/billingCycle";
+
+function parseStoredBillingCycle(raw: unknown): BillingCycle {
+	const value = String(raw ?? "Monthly");
+	if ((BILLING_CYCLE_OPTIONS as readonly string[]).includes(value)) {
+		return value as BillingCycle;
+	}
+	return "Monthly";
+}
 
 // We keep timestamps as UTC ISO strings only.
 export function nowIsoUtc(): string {
@@ -353,8 +365,7 @@ export async function loadServices(): Promise<ServiceCatalogItem[]> {
 		}
 		if (plans.length === 0) plans = ["Standard"];
 
-		const cycle =
-			String(r.defaultCycle) === "Yearly" ? "Yearly" : "Monthly";
+		const cycle = parseStoredBillingCycle(r.defaultCycle);
 		const status = String(r.defaultStatus) === "trial" ? "trial" : "active";
 
 		return {

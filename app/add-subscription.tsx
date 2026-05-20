@@ -226,10 +226,10 @@ export default function AddSubscriptionScreen() {
 			>
 				<ScrollView
 					showsVerticalScrollIndicator={false}
-					className="bg-gray-100"
+					className="bg-white"
 					contentContainerStyle={{ paddingBottom: 120 }}
 				>
-					<Card elevated={false} className="rounded-3xl p-3 m-2">
+					<Card className="p-3 m-2 border border-border">
 						<SelectField
 							label="Service Name"
 							value={service}
@@ -286,7 +286,7 @@ export default function AddSubscriptionScreen() {
 						/>
 					</Card>
 
-					<Card elevated={false} className="rounded-3xl p-3 m-2">
+					<Card className="p-3 m-2 border border-border">
 						<SelectField
 							label="Billing Cycle"
 							value={billingCycle}
@@ -419,7 +419,7 @@ export default function AddSubscriptionScreen() {
 						) : null}
 					</Card>
 
-					<Card elevated={false} className="rounded-3xl p-3 m-2">
+					<Card className="p-3 m-2 border border-border">
 						<SelectField
 							label="Subscription Category (optional)"
 							value={category}

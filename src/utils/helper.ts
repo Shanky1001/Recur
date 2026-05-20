@@ -99,6 +99,29 @@ export function monthlyPrice(
 	return Math.round(pricePerCycle);
 }
 
+export function annualPrice(
+	cycle: BillingCycle,
+	pricePerCycle: number,
+): number {
+	if (cycle === "Yearly") return Math.round(pricePerCycle);
+	if (cycle === "HalfYearly") return Math.round(pricePerCycle * 2);
+	if (cycle === "Quarterly") return Math.round(pricePerCycle * 4);
+	if (cycle === "Weekly") return Math.round(pricePerCycle * 52);
+	return Math.round(pricePerCycle * 12);
+}
+
+/** Normalized spend for analytics monthly vs yearly views. */
+export function spendForPeriod(
+	period: "Monthly" | "Yearly",
+	cycle: BillingCycle,
+	pricePerCycle: number,
+): number {
+	if (!Number.isFinite(pricePerCycle)) return 0;
+	return period === "Monthly"
+		? monthlyPrice(cycle, pricePerCycle)
+		: annualPrice(cycle, pricePerCycle);
+}
+
 export function getPresetAvatarUrls(): string[] {
 	return [8, 12, 15, 18, 24, 32].map(
 		(n) => `https://i.pravatar.cc/150?img=${n}`,
