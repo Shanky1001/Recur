@@ -199,9 +199,18 @@ npx expo run:android
 ---
 
 ## 📸 Screenshots
-
-> *(Coming soon — add screenshots of Home, Insights, Notification, and Add Subscription screens here)*
-
+<table>
+  <tr>
+    <td><img src="public/image1.png" alt="Home Screen" width="300" /></td>
+    <td><img src="public/image2.png" alt="Detailed Home Screen" width="300" /></td>
+    <td><img src="public/image3.png" alt="Insights Screen" width="300" /></td>
+  </tr>
+  <tr>
+    <td><img src="public/image4.png" alt="Profile Screen" width="300" /></td>
+    <td><img src="public/image5.png" alt="Add Subscription Screen" width="300" /></td>
+    <td><img src="public/image6.png" alt="Subscription Details Screen" width="300" /></td>
+  </tr>
+</table>
 ---
 
 ## 🗺️ Roadmap
