@@ -49,8 +49,8 @@ export const sqliteAppRepository: AppRepository = {
 	deleteSubscription: async (id: string) => {
 		await deleteSubscription(id);
 	},
-	loadNotifications: async () => {
-		return await loadNotifications();
+	loadNotifications: async (options) => {
+		return await loadNotifications(options);
 	},
 	upsertNotification: async (notification: Notification) => {
 		await upsertNotification(notification);

@@ -258,13 +258,21 @@ export async function clearSubscriptions(): Promise<void> {
 	await d.runAsync("DELETE FROM subscriptions");
 }
 
-export async function loadNotifications(): Promise<Notification[]> {
+export async function loadNotifications(options?: {
+	includeFuture?: boolean;
+}): Promise<Notification[]> {
 	await initSqlite();
 	const d = db;
 	if (!d) return [];
-	const rows = await d.getAllAsync<any>(
-		"SELECT * FROM notifications ORDER BY createdAt DESC",
-	);
+	const includeFuture = options?.includeFuture === true;
+	const rows = includeFuture
+		? await d.getAllAsync<any>(
+				"SELECT * FROM notifications ORDER BY createdAt DESC",
+			)
+		: await d.getAllAsync<any>(
+				"SELECT * FROM notifications WHERE createdAt <= ? ORDER BY createdAt DESC",
+				[new Date().toISOString()],
+			);
 	return rows.map((r) => ({
 		id: String(r.id),
 		title: String(r.title),
@@ -328,7 +336,10 @@ export async function markAllNotificationsRead(): Promise<void> {
 	await initSqlite();
 	const d = db;
 	if (!d) return;
-	await d.runAsync("UPDATE notifications SET read=1");
+	const nowIso = new Date().toISOString();
+	await d.runAsync("UPDATE notifications SET read=1 WHERE createdAt <= ?", [
+		nowIso,
+	]);
 }
 
 export async function resetLocalData(): Promise<void> {

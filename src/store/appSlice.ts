@@ -4,7 +4,7 @@ import type { Subscription } from "@/src/components/subscriptions/SubscriptionCa
 import type { ServiceConfig } from "@/src/constants/subscriptionsCatalog";
 import type { Notification } from "@/src/data/dummy";
 import { appService } from "@/src/services/appService";
-import { parseIsoLike } from "@/src/utils/helper";
+import { monthlyPrice, parseIsoLike } from "@/src/utils/helper";
 
 export type PreferencesState = {
 	currency: string;
@@ -72,11 +72,18 @@ function deriveDashboard(
 		return t >= start.getTime() && t <= end.getTime();
 	}).length;
 
-	const monthlySpend = activeSubscriptions.reduce(
-		(sum, s) =>
-			sum + (Number.isFinite(s.pricePerMonth) ? s.pricePerMonth : 0),
-		0,
-	);
+	const monthlySpend = activeSubscriptions.reduce((sum, s) => {
+		if (Number.isFinite(s.pricePerBillingCycle)) {
+			return (
+				sum +
+				monthlyPrice(
+					s.billingCycle ?? "Monthly",
+					s.pricePerBillingCycle ?? 0,
+				)
+			);
+		}
+		return sum + (Number.isFinite(s.pricePerMonth) ? s.pricePerMonth : 0);
+	}, 0);
 
 	return {
 		...base,

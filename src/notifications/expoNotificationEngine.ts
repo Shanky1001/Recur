@@ -6,7 +6,6 @@ import type { AppRepository } from "@/src/repository/appRepository";
 import type { NotificationJob, Preferences } from "@/src/repository/models";
 import {
 	buildRenewalReminderTrigger,
-	normalizeReminderDaysBefore,
 	renewalInstant,
 } from "@/src/utils/reminderSchedule";
 
@@ -68,6 +67,14 @@ function inAppNotificationId(subscription: Subscription): string {
 	return `${subscription.id}:renewal:${subscription.nextPaymentDate}`;
 }
 
+function inAppNotificationIdFromParts(
+	subscriptionId: string,
+	renewalAt?: string,
+): string {
+	if (renewalAt?.trim()) return `${subscriptionId}:renewal:${renewalAt}`;
+	return `${subscriptionId}:renewal:unknown`;
+}
+
 function toIndianDateTime(input: Date | number | string): string {
 	const date =
 		input instanceof Date
@@ -99,6 +106,44 @@ export function createExpoNotificationEngine(
 	let canSchedule = false;
 	let permissionPromptAttempted = false;
 	let notificationsMod: typeof import("expo-notifications") | null = null;
+	let listenersAttached = false;
+
+	async function persistInAppFromNotificationPayload(payload: {
+		subscriptionId: string;
+		renewalAt?: string;
+		title?: string | null;
+		message?: string | null;
+		firedAtIso?: string;
+	}): Promise<void> {
+		const subscriptionId = payload.subscriptionId.trim();
+		if (!subscriptionId) return;
+
+		const createdAt = payload.firedAtIso ?? nowIsoUtc();
+		const id = inAppNotificationIdFromParts(
+			subscriptionId,
+			payload.renewalAt,
+		);
+		const title = payload.title?.trim() || "Upcoming renewal";
+		const message =
+			payload.message?.trim() ||
+			(payload.renewalAt
+				? `Renews on ${toIndianDateTime(payload.renewalAt)}`
+				: "Your subscription is renewing soon.");
+
+		try {
+			await repository.upsertNotification({
+				id,
+				title,
+				message,
+				type: "billing",
+				subscriptionId,
+				createdAt,
+				read: false,
+			});
+		} catch {
+			// ignore
+		}
+	}
 
 	async function getExpoNotifications() {
 		if (Platform.OS === "web") return null;
@@ -131,6 +176,77 @@ export function createExpoNotificationEngine(
 			});
 		} catch {
 			// ignore
+		}
+
+		if (!listenersAttached) {
+			listenersAttached = true;
+			try {
+				(Notifications as any).addNotificationReceivedListener?.(
+					async (event: any) => {
+						const data = event?.request?.content?.data as
+							| Record<string, unknown>
+							| undefined;
+						if (String(data?.type ?? "") !== "renewalReminder")
+							return;
+						const subscriptionId = String(
+							data?.subscriptionId ?? "",
+						);
+						if (!subscriptionId) return;
+						const renewalAt =
+							typeof data?.renewalAt === "string"
+								? data.renewalAt
+								: undefined;
+						const eventDate =
+							typeof event?.date === "number"
+								? new Date(event.date).toISOString()
+								: nowIsoUtc();
+						await persistInAppFromNotificationPayload({
+							subscriptionId,
+							renewalAt,
+							title: event?.request?.content?.title,
+							message: event?.request?.content?.body,
+							firedAtIso: eventDate,
+						});
+					},
+				);
+			} catch {
+				// ignore
+			}
+			try {
+				(
+					Notifications as any
+				).addNotificationResponseReceivedListener?.(
+					async (response: any) => {
+						const notification = response?.notification;
+						const data = notification?.request?.content?.data as
+							| Record<string, unknown>
+							| undefined;
+						if (String(data?.type ?? "") !== "renewalReminder")
+							return;
+						const subscriptionId = String(
+							data?.subscriptionId ?? "",
+						);
+						if (!subscriptionId) return;
+						const renewalAt =
+							typeof data?.renewalAt === "string"
+								? data.renewalAt
+								: undefined;
+						const firedAtIso =
+							typeof notification?.date === "number"
+								? new Date(notification.date).toISOString()
+								: nowIsoUtc();
+						await persistInAppFromNotificationPayload({
+							subscriptionId,
+							renewalAt,
+							title: notification?.request?.content?.title,
+							message: notification?.request?.content?.body,
+							firedAtIso,
+						});
+					},
+				);
+			} catch {
+				// ignore
+			}
 		}
 
 		try {
@@ -198,21 +314,19 @@ export function createExpoNotificationEngine(
 		}
 
 		// Remove paired in-app reminder row for the cancelled schedule.
-		// Pairing is done by subscription + reminder type and matching trigger timestamp.
+		// Only clear future billing reminders/snoozes so historical records are preserved.
 		let all: Notification[] = [];
 		try {
-			all = await repository.loadNotifications();
+			all = await repository.loadNotifications({ includeFuture: true });
 		} catch {
 			all = [];
 		}
+		const nowMs = Date.now();
 		for (const n of all) {
 			if (n.subscriptionId !== job.subscriptionId) continue;
 			if (n.type !== "billing") continue;
-			const isPairedByTime = n.createdAt === job.triggerAt;
-			const isLegacyPairedId = n.id.startsWith(
-				`${job.subscriptionId}:renewal:`,
-			);
-			if (!isPairedByTime && !isLegacyPairedId) continue;
+			const createdMs = Date.parse(n.createdAt);
+			if (!Number.isFinite(createdMs) || createdMs <= nowMs) continue;
 			try {
 				await repository.deleteNotification(n.id);
 			} catch {
@@ -413,16 +527,6 @@ export function createExpoNotificationEngine(
 					expoNotificationId,
 					createdAt: nowIsoUtc(),
 				});
-				await repository.upsertNotification({
-					id: inAppNotificationId(subscription),
-					title: `Upcoming renewal: ${subscription.name}`,
-					message: `Renews on ${toIndianDateTime(subscription.nextPaymentDate)}`,
-					type: "billing",
-					subscriptionId: subscription.id,
-					createdAt: triggerAt,
-					read: false,
-				});
-				ctx?.notificationIds?.add(inAppNotificationId(subscription));
 			} catch {
 				// ignore
 			}
@@ -492,16 +596,6 @@ export function createExpoNotificationEngine(
 		try {
 			await repository.upsertNotificationJob(job);
 			ctx?.jobBySubscriptionId?.set(subscription.id, job);
-			await repository.upsertNotification({
-				id: inAppNotificationId(subscription),
-				title: `Upcoming renewal: ${subscription.name}`,
-				message: `Renews on ${toIndianDateTime(subscription.nextPaymentDate)}`,
-				type: "billing",
-				subscriptionId: subscription.id,
-				createdAt: triggerAt,
-				read: false,
-			});
-			ctx?.notificationIds?.add(inAppNotificationId(subscription));
 		} catch {
 			// ignore
 		}

@@ -3,6 +3,7 @@ import { Image, Pressable, Text, View } from "react-native";
 
 import SubscriptionStatusPill from "@/src/components/subscriptions/SubscriptionStatusPill";
 import Card from "@/src/components/ui/Card";
+import { billingCycleShortSuffix } from "@/src/utils/billingCycle";
 import { formatDateLong } from "@/src/utils/helper";
 
 export type SubscriptionStatus = "active" | "trial" | "paused" | "cancelled";
@@ -15,12 +16,7 @@ export type Subscription = {
 	planName: string;
 	pricePerMonth: number;
 	currencySymbol: string;
-	billingCycle?:
-		| "Weekly"
-		| "Monthly"
-		| "Quarterly"
-		| "HalfYearly"
-		| "Yearly";
+	billingCycle?: "Weekly" | "Monthly" | "Quarterly" | "HalfYearly" | "Yearly";
 	pricePerBillingCycle?: number;
 	paymentMethod?: string;
 	reminderEnabled?: boolean;
@@ -78,12 +74,7 @@ export default function SubscriptionCard({
 						{subscription.planName} – {subscription.currencySymbol}
 						{subscription.pricePerBillingCycle ??
 							subscription.pricePerMonth}
-						/
-						{subscription.billingCycle === "Yearly"
-							? "yr"
-							: subscription.billingCycle === "Weekly"
-								? "wk"
-								: "mo"}
+						/{billingCycleShortSuffix(subscription.billingCycle)}
 					</Text>
 				</View>
 				<View className="flex-1 items-end">

@@ -23,7 +23,9 @@ export interface AppRepository {
 	cancelSubscription: (id: string) => Promise<void>;
 	deleteSubscription: (id: string) => Promise<void>;
 
-	loadNotifications: () => Promise<Notification[]>;
+	loadNotifications: (options?: {
+		includeFuture?: boolean;
+	}) => Promise<Notification[]>;
 	upsertNotification: (notification: Notification) => Promise<void>;
 	markNotificationRead: (id: string) => Promise<void>;
 	deleteNotification: (id: string) => Promise<void>;
