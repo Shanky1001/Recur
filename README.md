@@ -227,7 +227,7 @@ npx expo run:android
 ## 👨‍💻 Author
 
 **Shashank Rai** — Senior Software Engineer
-[LinkedIn](https://linkedin.com/in/yourprofile) · [GitHub](https://github.com/yourusername) · [Portfolio](https://yourportfolio.com)
+[LinkedIn](https://linkedin.com/in/shashankrai01) · [GitHub](https://github.com/shanky1001) · [Portfolio](https://shashank-rai-dev.netlify.app/)
 
 ---
 
