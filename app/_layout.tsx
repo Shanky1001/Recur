@@ -1,10 +1,11 @@
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StatusBar } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 
+import { AppSplashScreen } from "@/src/components/ui/AppSplashScreen";
 import {
 	useApplyThemeMode,
 	useEffectiveColorScheme,
@@ -28,22 +29,36 @@ function ThemeController() {
 }
 
 export default function RootLayout() {
+	const [showCustomSplash, setShowCustomSplash] = useState(true);
 	const [fontsLoaded] = useFonts({
 		"Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
 		"Poppins-Medium": require("../assets/fonts/Poppins-Medium.ttf"),
+		"Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
 		"Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
 		"Poppins-Thin": require("../assets/fonts/Poppins-Thin.ttf"),
 		"Poppins-Light": require("../assets/fonts/Poppins-Light.ttf"),
 	});
+
 	useEffect(() => {
 		if (fontsLoaded) {
-			SplashScreen.hideAsync();
+			void SplashScreen.hideAsync();
+			const splashTimer = setTimeout(() => {
+				setShowCustomSplash(false);
+			}, 1800);
+
+			return () => clearTimeout(splashTimer);
 		}
 	}, [fontsLoaded]);
 
-	if (!fontsLoaded) {
-		return null;
+	if (!fontsLoaded || showCustomSplash) {
+		return (
+			<>
+				<StatusBar barStyle="light-content" translucent={false} />
+				<AppSplashScreen />
+			</>
+		);
 	}
+
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
 			<AppStateProvider>

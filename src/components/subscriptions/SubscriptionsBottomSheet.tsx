@@ -48,7 +48,7 @@ export default function SubscriptionsBottomSheet({
 		return subscriptions.filter((s) => s.category === selectedCategory);
 	}, [subscriptions, selectedCategory]);
 
-	const snapPoints = useMemo(() => ["65%", "100%"], []);
+	const snapPoints = useMemo(() => ["65%", "75%", "90%", "100%"], []);
 
 	const renderItem = useCallback(
 		({ item }: { item: Subscription }) => (

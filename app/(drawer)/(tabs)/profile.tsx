@@ -17,10 +17,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import PopoverSelect from "@/src/components/analytics/PopoverSelect";
 import TimeField from "@/src/components/forms/TimeField";
 import Card from "@/src/components/ui/Card";
-import { formatReminderTimeDisplay } from "@/src/utils/reminderSchedule";
 import { CurrencyOptions } from "@/src/data/dummy";
-import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
 import type { ThemeMode } from "@/src/hooks/useEffectiveColorScheme";
+import { useTabBarContentPadding } from "@/src/hooks/useTabBarContentPadding";
 import {
 	useAppActions,
 	useAppState,
@@ -30,6 +29,7 @@ import {
 	useSubscriptions,
 	useUser,
 } from "@/src/state/appState";
+import { formatReminderTimeDisplay } from "@/src/utils/reminderSchedule";
 
 type CurrencyKey = "INR" | "USD" | "EUR" | "GBP";
 
@@ -398,7 +398,9 @@ export default function ProfileScreen() {
 							subLabel={`Default: ${formatReminderTimeDisplay(reminderTime)} — applies to new subscriptions`}
 							value={reminderTime}
 							onChange={(next) => {
-								updatePreferences({ defaultReminderTime: next });
+								updatePreferences({
+									defaultReminderTime: next,
+								});
 								applyReminderTimeToAll(next);
 							}}
 						/>
@@ -515,21 +517,23 @@ export default function ProfileScreen() {
 					/>
 				</Section>
 
-				<Section title="Premium (Later)">
-					<Row
-						icon="sparkles-outline"
-						label="Upgrade to premium"
-						subLabel="Coming later"
-						disabled
-					/>
-					<Divider />
-					<Row
-						icon="list-outline"
-						label="Premium features list"
-						subLabel="Coming later"
-						disabled
-					/>
-				</Section>
+				{__DEV__ && (
+					<Section title="Premium (Later)">
+						<Row
+							icon="sparkles-outline"
+							label="Upgrade to premium"
+							subLabel="Coming later"
+							disabled
+						/>
+						<Divider />
+						<Row
+							icon="list-outline"
+							label="Premium features list"
+							subLabel="Coming later"
+							disabled
+						/>
+					</Section>
+				)}
 
 				<Section title="Support">
 					<Row
@@ -538,7 +542,7 @@ export default function ProfileScreen() {
 						subLabel="Email us"
 						onPress={async () => {
 							const url =
-								"mailto:support@recur.app?subject=Recur%20Feedback";
+								"mailto:inshanlabs@gmail.com?subject=Recur%20Feedback";
 							const can = await Linking.canOpenURL(url);
 							if (!can) {
 								Alert.alert(
@@ -550,42 +554,46 @@ export default function ProfileScreen() {
 							await Linking.openURL(url);
 						}}
 					/>
-					<Divider />
-					<Row
-						icon="star-outline"
-						label="Rate app"
-						subLabel="Coming later"
-						onPress={() => {
-							Alert.alert(
-								"Rate app",
-								"Store link will be added later.",
-							);
-						}}
-					/>
-					<Divider />
-					<Row
-						icon="shield-checkmark-outline"
-						label="Privacy policy"
-						subLabel="Coming later"
-						onPress={() => {
-							Alert.alert(
-								"Privacy policy",
-								"Link will be added later.",
-							);
-						}}
-					/>
-					<Divider />
-					<Row
-						icon="document-text-outline"
-						label="Terms & conditions"
-						subLabel="Coming later"
-						onPress={() => {
-							Alert.alert(
-								"Terms & conditions",
-								"Link will be added later.",
-							);
-						}}
-					/>
+					{__DEV__ && (
+						<>
+							<Divider />
+							<Row
+								icon="star-outline"
+								label="Rate app"
+								subLabel="Coming later"
+								onPress={() => {
+									Alert.alert(
+										"Rate app",
+										"Store link will be added later.",
+									);
+								}}
+							/>
+							<Divider />
+							<Row
+								icon="shield-checkmark-outline"
+								label="Privacy policy"
+								subLabel="Coming later"
+								onPress={() => {
+									Alert.alert(
+										"Privacy policy",
+										"Link will be added later.",
+									);
+								}}
+							/>
+							<Divider />
+							<Row
+								icon="document-text-outline"
+								label="Terms & conditions"
+								subLabel="Coming later"
+								onPress={() => {
+									Alert.alert(
+										"Terms & conditions",
+										"Link will be added later.",
+									);
+								}}
+							/>
+						</>
+					)}
 				</Section>
 			</ScrollView>
 		</SafeAreaView>

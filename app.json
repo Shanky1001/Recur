@@ -5,11 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "com.recurvo",
+    "scheme": "com.inshanlabs.recurvo",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.recurvo"
+      "bundleIdentifier": "com.inshanlabs.recurvo"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +17,7 @@
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.recurvo"
+      "package": "com.inshanlabs.recurvo"
     },
     "web": {
       "output": "static",
@@ -28,12 +28,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash.png",
-          "imageWidth": 200,
+          "image": "./assets/images/icon.png",
+          "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#020F4A",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#020F4A"
           }
         }
       ],

@@ -62,7 +62,7 @@ export default function NotificationActionsSheet({
 			backdropComponent={renderBackdrop}
 			onClose={onClose}
 			backgroundStyle={{
-				backgroundColor: isDark ? "#111827" : "#fff9e3",
+				backgroundColor: isDark ? "#111827" : "#ffffff",
 				borderTopLeftRadius: 24,
 				borderTopRightRadius: 24,
 			}}

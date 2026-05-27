@@ -19,7 +19,6 @@ export default function HomeHeader({
 	onPressNotifications,
 	onPressMenu,
 }: HomeHeaderProps) {
-
 	return (
 		<View className="flex-row items-center justify-between px-5 pb-4 pt-2">
 			<View className="mr-3 flex-1 flex-row items-center">
@@ -50,11 +49,15 @@ export default function HomeHeader({
 					}
 				/>
 
-				{__DEV__ && (
+				{!__DEV__ && (
 					<IconButton
 						onPress={onPressMenu}
 						icon={
-							<Ionicons name="menu" size={22} className="text-foreground" />
+							<Ionicons
+								name="menu"
+								size={22}
+								className="text-foreground"
+							/>
 						}
 					/>
 				)}
