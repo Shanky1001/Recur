@@ -201,10 +201,7 @@ export default function SettingsScreen() {
 	};
 
 	return (
-		<View
-			className="flex-1 bg-background"
-			style={{ paddingTop: insets.top }}
-		>
+		<View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
 			<View className="px-4 pb-3 pt-2">
 				<View className="flex-row items-center">
 					<Pressable onPress={() => router.back()} hitSlop={10}>

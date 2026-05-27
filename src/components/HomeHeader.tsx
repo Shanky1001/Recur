@@ -49,7 +49,7 @@ export default function HomeHeader({
 					}
 				/>
 
-				{!__DEV__ && (
+				{__DEV__ && (
 					<IconButton
 						onPress={onPressMenu}
 						icon={

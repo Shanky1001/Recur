@@ -18,7 +18,7 @@ export default function OnboardingStepHeader({
 	const progress = Math.max(0, Math.min(1, step / total));
 
 	return (
-		<View className="px-4 pt-2">
+		<View className="px-4 pt-2 bg-white">
 			<View className="flex-row items-center justify-between">
 				{step !== 1 ? (
 					<Pressable
@@ -33,7 +33,7 @@ export default function OnboardingStepHeader({
 						<Ionicons
 							name="chevron-back"
 							size={20}
-							color="#0f172a"
+							className="text-foreground"
 						/>
 					</Pressable>
 				) : (
@@ -57,7 +57,7 @@ export default function OnboardingStepHeader({
 				)}
 			</View>
 
-			<View className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+			<View className="mt-4 h-2 overflow-hidden rounded-full bg-white/80">
 				<View
 					className="h-2 rounded-full bg-blue-600"
 					style={{ width: `${progress * 100}%` }}

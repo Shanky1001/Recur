@@ -102,7 +102,7 @@ export default function OnboardingStepContent({
 							))}
 						</View>
 
-						<View className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+						<View className="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-4">
 							<Text className="text-xs font-poppins-bold uppercase tracking-widest text-foreground/50">
 								Core benefits
 							</Text>
@@ -175,8 +175,7 @@ export default function OnboardingStepContent({
 									value={name}
 									onChangeText={onChangeName}
 									placeholder="e.g. John Doe"
-									className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-poppins-semibold"
-									placeholderTextColor="#94a3b8"
+									className="rounded-2xl border border-slate-200 bg-gray-100 px-4 py-3 text-base font-poppins-semibold text-foreground"
 								/>
 							</View>
 						</View>
@@ -222,10 +221,7 @@ export default function OnboardingStepContent({
 									>
 										<Image
 											source={{ uri }}
-											style={{
-												width: 44,
-												height: 44,
-											}}
+											className="w-11 h-11"
 										/>
 									</Pressable>
 								);
@@ -382,7 +378,7 @@ export default function OnboardingStepContent({
 									}}
 									className={
 										active
-											? "rounded-2xl border-2 border-blue-600 bg-blue-50/50 px-4 py-3"
+											? "rounded-2xl border-2 border-blue-600 bg-white px-4 py-3"
 											: "rounded-2xl border border-slate-200 bg-white px-4 py-3"
 									}
 									style={{ width: "48%" }}
@@ -463,7 +459,7 @@ export default function OnboardingStepContent({
 								value={cost}
 								onChangeText={onChangeCost}
 								keyboardType="numeric"
-								className="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base font-poppins-semibold"
+								className="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-foreground font-poppins-semibold"
 								placeholderTextColor="#94a3b8"
 							/>
 						</View>
